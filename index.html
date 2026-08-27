@@ -1,1 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Congreso 2026 · Control de asistencia</title>
+<style>
+  :root {
+    --navy: #0b1c33;
+    --navy-2: #16324f;
+    --bg: #f1f3f6;
+    --card: #ffffff;
+    --border: #e1e5eb;
+    --text: #101a26;
+    --text-muted: #64748b;
+    --celeste: #0ea5e9;
+    --celeste-bg: #e0f2fe;
+    --verde: #16a34a;
+    --verde-bg: #dcfce7;
+    --amarillo: #d97706;
+    --amarillo-bg: #fef3c7;
+    --rojo: #dc2626;
+    --rojo-bg: #fee2e2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0; background: var(--bg);
+    background-image: radial-gradient(rgba(11,28,51,0.05) 1px, transparent 1px);
+    background-size: 14px 14px;
+    min-height: 100vh;
+  }
+  .shell { display: flex; align-items: flex-start; min-height: 100vh; }
 
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--navy); min-height: 100vh; padding: 22px 14px; color: white; position: sticky; top: 0; }
+  .sidebar-logo { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: white; margin-bottom: 4px; }
+  .sidebar-logo span { color: var(--celeste); }
+  .sidebar-sub { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
+  .nav-group { margin-bottom: 20px; }
+  .nav-pill { font-size: 11px; font-weight: 800; letter-spacing: 0.6px; padding: 7px 12px; border-radius: 8px; margin-bottom: 6px; color: white; }
+  .nav-pill.celeste { background: var(--celeste); }
+  .nav-pill.amarillo { background: var(--amarillo); }
+  .nav-pill.verde { background: var(--verde); }
+  .nav-pill.rojo { background: var(--rojo); }
+  .nav-item { font-size: 13px; padding: 8px 14px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.75); margin-bottom: 2px; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+  .nav-item.active { background: rgba(255,255,255,0.14); color: white; font-weight: 600; }
+
+  .main { flex: 1; min-width: 0; padding: 22px 26px; }
+  .app { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); max-width: 1400px; margin: 0 auto; width: 100%; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 14px; }
+  .topbar-title { font-size: 30px; font-weight: 800; letter-spacing: 0.5px; color: var(--navy); line-height: 1.1; }
+  .topbar-subtitle { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+  .topbar-right { text-align: right; }
+  .hero-clock { font-size: 15px; font-weight: 700; color: var(--navy); letter-spacing: 1px; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--verde); margin-right: 6px; box-shadow: 0 0 0 0 rgba(22,163,74,0.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.5);} 70% { box-shadow: 0 0 0 6px rgba(22,163,74,0);} 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0);} }
+
+  .action-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .action-row .muted { width: 100%; text-align: center; }
+
+  .error-banner { background: var(--rojo-bg); color: var(--rojo); border: 1px solid var(--rojo); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none; }
+  .muted { color: var(--text-muted); font-size: 13px; }
+
+  button { border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  button.primary { background: var(--navy); color: white; border-color: var(--navy); }
+  button.celeste { background: var(--celeste); color: white; border-color: var(--celeste); }
+  button:active { opacity: 0.8; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card { border-radius: 14px; padding: 16px; color: white; box-shadow: 0 2px 6px rgba(11,28,51,0.08); }
+  .stat-card.top-celeste { background: linear-gradient(155deg, var(--celeste) 0%, #0284c7 100%); }
+  .stat-card.top-verde { background: linear-gradient(155deg, var(--verde) 0%, #15803d 100%); }
+  .stat-card.top-amarillo { background: linear-gradient(155deg, var(--amarillo) 0%, #b45309 100%); }
+  .stat-card.top-rojo { background: linear-gradient(155deg, var(--rojo) 0%, #b91c1c 100%); }
+  .stat-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stat-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: rgba(255,255,255,0.2); color: white; }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-num { font-size: 28px; font-weight: 800; line-height: 1; }
+  .stat-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 4px; }
+  .progress-bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,0.3); overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: white; border-radius: 6px; transition: width 0.3s; }
+  .quorum-edit { display: flex; gap: 6px; margin-top: 8px; }
+  .quorum-edit input { width: 70px; padding: 6px 8px; border-radius: 6px; border: none; font-size: 13px; }
+  .quorum-edit button { padding: 6px 10px; font-size: 12px; border: none; background: rgba(255,255,255,0.25); color: white; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 10px; text-align: center; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; background: var(--card); color: var(--text-muted); }
+  .tab.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+  .card-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--celeste); text-transform: uppercase; margin-bottom: 2px; }
+  .card-title { font-size: 22px; font-weight: 700; margin: 0 0 14px; font-family: Georgia, 'Times New Roman', serif; }
+
+  .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .search-row input[type=text] { flex: 1; }
+  .dni-badge { font-size: 11px; font-weight: 700; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg); }
+
+  input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; }
+  input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--celeste); background: white; }
+  textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+
+  .filter-chips { display: flex; gap: 6px; margin-bottom: 14px; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; background: var(--card); color: var(--text-muted); font-weight: 500; }
+  .chip.active { border-color: var(--navy); color: white; background: var(--navy); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  tbody td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  tbody tr:hover { background: var(--bg); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--celeste-bg); color: var(--celeste); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; margin-right: 10px; flex-shrink: 0; }
+  .invitado-cell { display: flex; align-items: center; }
+  .invitado-name { font-weight: 600; font-size: 14px; }
+  .invitado-num { font-size: 11px; color: var(--text-muted); }
+  .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
+  .badge.presente { background: var(--verde-bg); color: var(--verde); }
+  .badge.pendiente { background: var(--amarillo-bg); color: var(--amarillo); }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .row-action-btn { padding: 6px 12px; font-size: 12px; }
+  .row-action-btn.marcar { background: var(--verde); color: white; border-color: var(--verde); }
+  .row-action-btn.desmarcar { background: var(--rojo-bg); color: var(--rojo); border-color: var(--rojo-bg); }
+  .sexo-tag { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-muted); padding: 3px 8px; border-radius: 6px; }
+  .sexo-tag:hover { background: var(--bg); }
+  .table-wrap { max-height: 60vh; overflow-y: auto; }
+  .empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px; }
+  .table-footer { font-size: 12px; color: var(--text-muted); padding: 10px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .file-hidden { display: none; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(11,28,51,0.55); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fdfaf3; border-radius: 18px; padding: 26px; max-width: 420px; width: 100%; }
+  .modal-close { float: right; background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+  .modal-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--celeste); text-transform: uppercase; }
+  .modal-title { font-size: 26px; font-weight: 700; margin: 6px 0 6px; font-family: Georgia, 'Times New Roman', serif; }
+  .modal-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+  .field-label { font-size: 13px; font-weight: 700; margin-bottom: 6px; display: block; }
+  .field-group { margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="sidebar">
+    <div class="sidebar-logo">CONGRESO <span>2026</span></div>
+    <div class="sidebar-sub">Misión Centro-Oeste</div>
+
+    <div class="nav-group">
+      <div class="nav-pill celeste">REGISTRO</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('all')">Todos</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('in')">Presentes</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('out')">Por llegar</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-pill amarillo">GESTIÓN DE LISTA</div>
+      <div class="nav-item" onclick="switchTab('load')">Cargar / Importar</div>
+      <div class="nav-item" onclick="openAddModal()">+ Agregar persona</div>
+      <div class="nav-item" onclick="exportExcel()">⬇ Exportar Excel</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-pill verde">EN VIVO</div>
+      <div class="muted" id="last-sync" style="color: rgba(255,255,255,0.7); padding: 0 14px;"><span class="live-dot"></span>Conectando...</div>
+    </div>
+  </div>
+
+  <div class="main">
+  <div class="app">
+  <div class="error-banner" id="error-banner"></div>
+
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Control de asistencia</div>
+      <div class="topbar-subtitle">Congreso 2026 · Misión Centro-Oeste del Perú</div>
+    </div>
+    <div class="topbar-right">
+      <div class="hero-clock" id="live-clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card top-celeste">
+      <div class="stat-top"><div class="stat-icon celeste">👥</div><div class="stat-label">Registrados</div></div>
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-sub" id="stat-total-sub">&nbsp;</div>
+    </div>
+    <div class="stat-card top-verde">
+      <div class="stat-top"><div class="stat-icon verde">✓</div><div class="stat-label">Presentes</div></div>
+      <div class="stat-num" id="stat-in">0</div>
+      <div class="stat-sub">&nbsp;</div>
+    </div>
+    <div class="stat-card top-amarillo">
+      <div class="stat-top"><div class="stat-icon amarillo">⏱</div><div class="stat-label">Por llegar</div></div>
+      <div class="stat-num" id="stat-pending">0</div>
+      <div class="stat-sub">&nbsp;</div>
+    </div>
+    <div class="stat-card top-verde">
+      <div class="stat-top"><div class="stat-icon verde">📈</div><div class="stat-label">Avance</div></div>
+      <div class="stat-num" id="stat-pct">0%</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card top-celeste">
+      <div class="stat-top"><div class="stat-icon celeste">♂</div><div class="stat-label">Varones</div></div>
+      <div class="stat-num" id="stat-hombres">0 / 0</div>
+      <div class="stat-sub" id="stat-hombres-sub">presentes / registrados</div>
+    </div>
+    <div class="stat-card top-rojo">
+      <div class="stat-top"><div class="stat-icon rojo">♀</div><div class="stat-label">Mujeres</div></div>
+      <div class="stat-num" id="stat-mujeres">0 / 0</div>
+      <div class="stat-sub" id="stat-mujeres-sub">presentes / registradas</div>
+    </div>
+    <div class="stat-card top-amarillo">
+      <div class="stat-top"><div class="stat-icon amarillo" id="quorum-icon">◎</div><div class="stat-label">Quórum</div></div>
+      <div class="stat-num" id="stat-quorum">0 / 0</div>
+      <div class="quorum-edit">
+        <input type="number" id="quorum-input" placeholder="Meta">
+        <button onclick="saveQuorum()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-registro">
+    <div class="card">
+      <div class="card-eyebrow">LISTA GENERAL</div>
+      <div class="card-title">Registro de asistentes</div>
+      <div class="search-row">
+        <input type="text" id="search" placeholder="Buscar por DNI o nombre..." oninput="renderTable()" onkeydown="onSearchKeydown(event)" autocomplete="off" />
+        <span class="dni-badge">DNI</span>
+      </div>
+      <div class="filter-chips">
+        <div class="chip active" id="chip-all" onclick="setFilter('all')">Todos</div>
+        <div class="chip" id="chip-in" onclick="setFilter('in')">Presentes</div>
+        <div class="chip" id="chip-out" onclick="setFilter('out')">Por llegar</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Invitado</th><th>DNI</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="empty" id="table-empty" style="display:none;">No hay personas en esta vista</div>
+      </div>
+      <div class="table-footer" id="table-footer"></div>
+    </div>
+  </div>
+
+  <div id="view-load" style="display:none;">
+    <div class="card">
+      <div class="card-eyebrow">IMPORTAR</div>
+      <div class="card-title">Cargar tu lista de invitados</div>
+      <div class="btn-row">
+        <button class="primary" onclick="document.getElementById('excel-input').click()">⬆ Importar lista Excel/CSV</button>
+        <button onclick="openAddModal()">+ Agregar persona</button>
+      </div>
+      <input type="file" id="excel-input" class="file-hidden" accept=".xlsx,.xls,.csv" onchange="loadExcel(event)" />
+      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, y opcionalmente <code>sexo</code> (M/F) — con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
+      <p class="muted" id="excel-status"></p>
+    </div>
+    <div class="card">
+      <p class="muted" style="margin-top:0;">O pega la lista a mano, una persona por línea, formato: <code>DNI,Nombre,Apellidos,Sexo</code> (Sexo es opcional)</p>
+      <textarea id="bulk-input" placeholder="12345678,Juan,Perez Diaz,M
+87654321,Maria,Lopez Rios,F"></textarea>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button class="primary" onclick="loadBulk()">Guardar lista</button>
+        <span class="muted" id="load-status"></span>
+      </div>
+    </div>
+    <div class="card">
+      <p class="muted" style="margin:0;">Todo se guarda en una base de datos real (Firebase) y se sincroniza en vivo con cualquiera que tenga este mismo link abierto.</p>
+    </div>
+    <div class="card" style="border-color: var(--rojo);">
+      <div class="card-eyebrow" style="color: var(--rojo);">ZONA DE PELIGRO</div>
+      <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">Reiniciar lista completa</div>
+      <p class="muted" style="margin-top:0;">Esto borra TODOS los invitados y sus marcas de llegada, para empezar de cero (por ejemplo, si vas a cargar una lista totalmente nueva para otro evento). Esta acción no se puede deshacer.</p>
+      <button style="background: var(--rojo); color: white; border-color: var(--rojo);" onclick="resetAllData()">🗑 Reiniciar lista completa</button>
+      <p class="muted" id="reset-status" style="margin-top:10px; margin-bottom:0;"></p>
+    </div>
+  </div>
+  </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="add-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddModal()">✕</button>
+    <div class="modal-eyebrow">NUEVO REGISTRO</div>
+    <div class="modal-title">Agregar invitado</div>
+    <div class="modal-desc">Completa los datos para incluir una persona en la lista.</div>
+    <div class="field-group">
+      <label class="field-label">Nombre</label>
+      <input type="text" id="modal-nombre" placeholder="Ej. María">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Apellidos</label>
+      <input type="text" id="modal-apellidos" placeholder="Ej. Fernández López">
+    </div>
+    <div class="field-group">
+      <label class="field-label">DNI</label>
+      <input type="text" id="modal-dni" placeholder="Ej. 12345678">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Sexo</label>
+      <select id="modal-sexo">
+        <option value="">Sin especificar</option>
+        <option value="M">Masculino</option>
+        <option value="F">Femenino</option>
+      </select>
+    </div>
+    <button class="primary" style="width:100%;" onclick="saveModalPerson()">+ Guardar invitado</button>
+    <p class="muted" id="modal-status" style="margin-top:10px; margin-bottom:0;"></p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, onSnapshot, writeBatch, getDocs, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB7jjGEHLS5Ai0qP4v9gEK5KT8XqVKtdr0",
+  authDomain: "asistencia-congreso-micop-2026.firebaseapp.com",
+  projectId: "asistencia-congreso-micop-2026",
+  storageBucket: "asistencia-congreso-micop-2026.firebasestorage.app",
+  messagingSenderId: "1036794819790",
+  appId: "1:1036794819790:web:1912640f690f16ff9d0c9f",
+  measurementId: "G-56HNRLVBLX"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const asistentesCol = collection(db, "asistentes");
+const quorumDocRef = doc(db, "config", "quorum");
+
+let attendees = [];
+let currentFilter = 'all';
+let quorumMeta = 0;
+
+function normalize(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+const NOMBRES_M = new Set(["carlos","jorge","miguel","diego","renato","fernando","ricardo","alberto","sergio","victor","pedro","manuel","julio","raul","oscar","luis","jose","antonio","enrique","hugo","martin","cesar","alfredo","roberto","eduardo","javier","alan","bruno","marco","franco","juan","jesus","daniel","david","angel","alexander","alex","andres","adrian","gabriel","gonzalo","ivan","jaime","joel","jorge luis","kevin","leonardo","mario","nestor","omar","pablo","rafael","ronald","ruben","santiago","saul","victor hugo","walter","willy","wilson","yhon","abel","abraham","agustin","aldo","alexis","alonso","ambrosio","anibal","armando","arturo","augusto","benjamin","cristian","cristopher","dario","dennis","edgar","edison","edwin","efrain","elias","emilio","erick","ernesto","esteban","ezequiel","fabian","felipe","félix","francisco","freddy","gerardo","german","gilberto","giovanni","giuseppe","gregorio","guillermo","gustavo","harold","hector","henry","herbert","hernan","ignacio","isaac","israel","jack","jefferson","jhon","jhonatan","joaquin","jonathan","jordan","josue","juan carlos","julian","justo","kelvin","leandro","leonel","lorenzo","lucas","luciano","marcelo","marcos","mario","mateo","mauricio","maximo","maykol","melquiades","michael","moises","nicolas","noe","norberto","olger","orlando","osmar","pascual","percy","piero","porfirio","quintin","ramiro","ramon","randy","reinaldo","renzo","reyner","richard","robert","rodolfo","rodrigo","rolando","romario","ronal","rosendo","salomon","salvador","samuel","segundo","serapio","teodoro","tito","tomas","toribio","ulises","urbano","valentin","vicente","vidal","wagner","washington","wilder","wilfredo","william","yerson","yordan","yuri","zacarias"]);
+const NOMBRES_F = new Set(["lucia","andrea","valeria","camila","paola","gabriela","daniela","karen","milagros","rosa","claudia","patricia","silvia","veronica","cynthia","elena","teresa","susana","monica","beatriz","yolanda","ines","marisol","carmen","liliana","norma","katherine","alejandra","jazmin","estefania","maria","ana","rosario","luz","gladys","lourdes","pilar","raquel","sandra","viviana","yesenia","zoila","adriana","alicia","amparo","angela","anita","aurora","betty","blanca","carla","carolina","cecilia","cindy","clara","consuelo","cristina","dalila","deysi","diana","dina","dora","edith","elizabeth","emma","erika","esperanza","estela","eva","evelyn","fanny","fiorella","flor","gaby","giovanna","gloria","graciela","guadalupe","haydee","ines","irene","irma","isabel","jacqueline","jenny","jessica","josefina","juana","judith","julia","karina","katia","katty","laura","leidy","leonor","lidia","liz","lizbeth","luisa","magaly","magdalena","malena","marcela","margarita","maribel","marilu","mariela","marina","marisela","marlene","marta","mayra","melissa","mercedes","milena","mirella","mirian","nancy","natalia","nataly","nelly","nery","nidia","nilda","noelia","nora","norka","olga","olinda","paula","pamela","perla","petronila","priscila","rocio","romina","rosalia","rosmery","ruth","sabina","sara","saraí","sheyla","sofia","soledad","sonia","stefany","tania","valentina","vanessa","victoria","virginia","wendy","xiomara","yanet","yesica","yolanda","zaida","zulema"]);
+
+function guessSexo(nombre) {
+  const primero = normalize(nombre).split(' ')[0];
+  if (!primero) return '';
+  if (NOMBRES_M.has(primero)) return 'M';
+  if (NOMBRES_F.has(primero)) return 'F';
+  // Regla de respaldo: la mayoría de nombres en español terminados en "a" son femeninos,
+  // terminados en "o" u otras terminaciones suelen ser masculinos. Es una aproximación,
+  // se puede corregir con un clic en la tabla.
+  if (primero.endsWith('a')) return 'F';
+  if (primero.endsWith('o')) return 'M';
+  return '';
+}
+function fullName(a) {
+  return [a.nombre, a.apellidos].filter(Boolean).join(' ');
+}
+function initials(a) {
+  const n = (a.nombre || '?').trim()[0] || '?';
+  const ap = (a.apellidos || '').trim()[0] || '';
+  return (n + ap).toUpperCase();
+}
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearError() {
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+onSnapshot(asistentesCol, (snapshot) => {
+  attendees = snapshot.docs.map(d => ({ dni: d.id, ...d.data() }));
+  clearError();
+  updateStats();
+  renderTable();
+  document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>En vivo · ' + new Date().toLocaleTimeString();
+}, (err) => {
+  showError('⚠️ No se pudo conectar a la base de datos. Revisa tu conexión. Detalle: ' + (err && err.message ? err.message : err));
+});
+
+onSnapshot(quorumDocRef, (snap) => {
+  quorumMeta = (snap.exists() && snap.data().meta) ? snap.data().meta : 0;
+  document.getElementById('quorum-input').value = quorumMeta || '';
+  updateStats();
+}, () => {});
+
+function updateStats() {
+  const total = attendees.length;
+  const inCount = attendees.filter(a => a.llego).length;
+  const pending = total - inCount;
+  const pct = total > 0 ? Math.round((inCount / total) * 100) : 0;
+  const hombres = attendees.filter(a => a.sexo === 'M');
+  const mujeres = attendees.filter(a => a.sexo === 'F');
+  const hombresPresentes = hombres.filter(a => a.llego).length;
+  const mujeresPresentes = mujeres.filter(a => a.llego).length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-total-sub').textContent = total + ' / ' + total + ' registrados';
+  document.getElementById('stat-in').textContent = inCount;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('stat-hombres').textContent = hombresPresentes + ' / ' + hombres.length;
+  document.getElementById('stat-mujeres').textContent = mujeresPresentes + ' / ' + mujeres.length;
+
+  const quorumEl = document.getElementById('stat-quorum');
+  const quorumIcon = document.getElementById('quorum-icon');
+  quorumEl.textContent = inCount + ' / ' + (quorumMeta || '—');
+  if (quorumMeta > 0 && inCount >= quorumMeta) {
+    quorumIcon.className = 'stat-icon verde';
+  } else {
+    quorumIcon.className = 'stat-icon amarillo';
+  }
+}
+
+async function saveQuorum() {
+  const val = parseInt(document.getElementById('quorum-input').value, 10) || 0;
+  try {
+    await setDoc(quorumDocRef, { meta: val });
+  } catch (e) {
+    showError('⚠️ No se pudo guardar el quórum. ' + (e && e.message ? e.message : e));
+  }
+}
+
+async function resetAllData() {
+  const statusEl = document.getElementById('reset-status');
+  const total = attendees.length;
+  if (total === 0) {
+    statusEl.textContent = 'La lista ya está vacía.';
+    return;
+  }
+  const primeraConfirmacion = confirm(`Esto va a BORRAR PARA SIEMPRE a las ${total} personas registradas y todas sus marcas de llegada. ¿Estás segura de que quieres continuar?`);
+  if (!primeraConfirmacion) return;
+  const segundaConfirmacion = prompt('Para confirmar, escribe la palabra BORRAR (en mayúsculas) y presiona Aceptar:');
+  if (segundaConfirmacion !== 'BORRAR') {
+    statusEl.textContent = 'Cancelado — no se borró nada.';
+    return;
+  }
+  statusEl.textContent = 'Borrando, espera un momento...';
+  try {
+    const snap = await getDocs(asistentesCol);
+    const docs = snap.docs;
+    const chunkSize = 400;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+      const batch = writeBatch(db);
+      docs.slice(i, i + chunkSize).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    statusEl.textContent = `Listo, se borraron ${docs.length} registros. Ya puedes subir tu nueva lista.`;
+  } catch (e) {
+    statusEl.textContent = '⚠️ Error al borrar: ' + (e && e.message ? e.message : e);
+  }
+}
+
+function switchTab(tab) {
+  document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
+  document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
+  if (tab === 'lista' || tab === 'registro') renderTable();
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.getElementById('chip-all').classList.toggle('active', filter === 'all');
+  document.getElementById('chip-in').classList.toggle('active', filter === 'in');
+  document.getElementById('chip-out').classList.toggle('active', filter === 'out');
+  renderTable();
+}
+
+function renderTable() {
+  const q = normalize(document.getElementById('search').value);
+  let rows = attendees.slice().sort((a, b) => fullName(a).localeCompare(fullName(b)));
+
+  if (q) {
+    rows = rows
+      .map(a => {
+        const dni = normalize(a.dni);
+        const nombre = normalize(fullName(a));
+        let score = -1;
+        if (dni.startsWith(q)) score = 0;
+        else if (nombre.startsWith(q)) score = 1;
+        else if (dni.includes(q)) score = 2;
+        else if (nombre.includes(q)) score = 3;
+        return { a, score };
+      })
+      .filter(x => x.score >= 0)
+      .sort((x, y) => x.score - y.score || fullName(x.a).localeCompare(fullName(y.a)))
+      .map(x => x.a);
+  }
+
+  if (currentFilter === 'in') rows = rows.filter(a => a.llego);
+  if (currentFilter === 'out') rows = rows.filter(a => !a.llego);
+
+  const tbody = document.getElementById('table-body');
+  const emptyEl = document.getElementById('table-empty');
+  document.getElementById('table-footer').textContent = 'Mostrando ' + rows.length + ' de ' + attendees.length + ' personas';
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  tbody.innerHTML = rows.map((a, i) => `
+    <tr>
+      <td>
+        <div class="invitado-cell">
+          <div class="avatar">${escapeHtml(initials(a))}</div>
+          <div>
+            <div class="invitado-name">${escapeHtml(fullName(a))}</div>
+            <div class="invitado-num">Invitado #${String(i + 1).padStart(3, '0')}</div>
+          </div>
+        </div>
+      </td>
+      <td>${escapeHtml(a.dni)}</td>
+      <td><span class="sexo-tag" title="Click para corregir" onclick="cycleSexo('${a.dni}')">${a.sexo === 'M' ? '♂ M' : a.sexo === 'F' ? '♀ F' : '— '}</span></td>
+      <td>${a.llego
+        ? '<span class="badge presente"><span class="badge-dot"></span>Presente</span>'
+        : '<span class="badge pendiente"><span class="badge-dot"></span>Pendiente</span>'}</td>
+      <td>${a.hora || '—'}</td>
+      <td>${a.llego
+        ? `<button class="row-action-btn desmarcar" onclick="toggleCheckIn('${a.dni}')">Desmarcar</button>`
+        : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}</td>
+    </tr>
+  `).join('');
+}
+
+async function cycleSexo(dni) {
+  const person = attendees.find(a => a.dni === dni);
+  if (!person) return;
+  const next = person.sexo === 'M' ? 'F' : person.sexo === 'F' ? '' : 'M';
+  try {
+    await setDoc(doc(asistentesCol, dni), { sexo: next }, { merge: true });
+  } catch (e) {
+    showError('⚠️ No se pudo corregir el sexo. ' + (e && e.message ? e.message : e));
+  }
+}
+
+async function toggleCheckIn(dni) {
+  const person = attendees.find(a => a.dni === dni);
+  if (!person) return;
+  try {
+    await setDoc(doc(asistentesCol, dni), {
+      llego: !person.llego,
+      hora: !person.llego ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null
+    }, { merge: true });
+  } catch (e) {
+    showError('⚠️ No se pudo actualizar. ' + (e && e.message ? e.message : e));
+  }
+}
+
+function onSearchKeydown(event) {
+  if (event.key !== 'Enter') return;
+  const q = document.getElementById('search').value.trim();
+  if (!q) return;
+  const person = attendees.find(a => a.dni === q);
+  if (!person || person.llego) return;
+  toggleCheckIn(person.dni);
+}
+
+function openAddModal() {
+  document.getElementById('modal-status').textContent = '';
+  document.getElementById('add-modal-overlay').classList.add('open');
+}
+function closeAddModal() {
+  document.getElementById('add-modal-overlay').classList.remove('open');
+}
+
+async function saveModalPerson() {
+  const nombre = document.getElementById('modal-nombre').value.trim();
+  const apellidos = document.getElementById('modal-apellidos').value.trim();
+  const dni = document.getElementById('modal-dni').value.trim();
+  const sexo = document.getElementById('modal-sexo').value || guessSexo(nombre);
+  const statusEl = document.getElementById('modal-status');
+  if (!nombre || !dni) {
+    statusEl.textContent = 'Nombre y DNI son obligatorios.';
+    return;
+  }
+  try {
+    await setDoc(doc(asistentesCol, dni), { nombre, apellidos, sexo, llego: false, hora: null }, { merge: true });
+    document.getElementById('modal-nombre').value = '';
+    document.getElementById('modal-apellidos').value = '';
+    document.getElementById('modal-dni').value = '';
+    document.getElementById('modal-sexo').value = '';
+    closeAddModal();
+  } catch (e) {
+    statusEl.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e);
+  }
+}
+
+async function saveNewRows(rows) {
+  const chunkSize = 400;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const batch = writeBatch(db);
+    rows.slice(i, i + chunkSize).forEach(r => {
+      // merge:true solo escribe estos 3 campos — si la persona ya existe y ya
+      // había marcado su llegada (llego/hora), esos datos NO se tocan ni se pierden.
+      batch.set(doc(asistentesCol, r.dni), { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '' }, { merge: true });
+    });
+    await batch.commit();
+  }
+}
+
+function buildNewRows(rows) {
+  // rows: [{dni, nombre, apellidos, sexo}]
+  // Ya NO se descartan los DNI repetidos: si la persona ya existe, se actualiza su
+  // nombre/apellidos/sexo (por ejemplo, para corregir un error de tipeo). Solo se
+  // descartan filas sin DNI o sin nombre.
+  let skipped = 0;
+  let updated = 0;
+  const existentes = new Set(attendees.map(a => a.dni));
+  const vistosEnEsteArchivo = new Set();
+  const newRows = [];
+  rows.forEach(r => {
+    const dni = (r.dni === undefined || r.dni === null) ? '' : String(r.dni).trim();
+    const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).trim();
+    const apellidos = (r.apellidos === undefined || r.apellidos === null) ? '' : String(r.apellidos).trim();
+    const sexoRaw = (r.sexo === undefined || r.sexo === null) ? '' : String(r.sexo).trim().toUpperCase();
+    const sexo = (sexoRaw === 'M' || sexoRaw === 'F') ? sexoRaw : guessSexo(nombre);
+    if (!dni || !nombre) { skipped++; return; }
+    if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
+    vistosEnEsteArchivo.add(dni);
+    if (existentes.has(dni)) updated++;
+    newRows.push({ dni, nombre, apellidos, sexo });
+  });
+  return { newRows, skipped, updated };
+}
+
+async function loadBulk() {
+  const raw = document.getElementById('bulk-input').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const statusEl = document.getElementById('load-status');
+  if (lines.length === 0) {
+    statusEl.textContent = 'Pega al menos una línea con DNI y nombre.';
+    return;
+  }
+  const rows = lines.map(line => {
+    const parts = line.split(',').map(p => p.trim());
+    return { dni: parts[0], nombre: parts[1], apellidos: parts[2], sexo: parts[3] };
+  });
+  const { newRows, skipped, updated } = buildNewRows(rows);
+  statusEl.textContent = 'Guardando...';
+  try {
+    await saveNewRows(newRows);
+    statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos (sin DNI/nombre o repetidos en el archivo).`;
+    document.getElementById('bulk-input').value = '';
+  } catch (e) {
+    statusEl.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e);
+  }
+}
+
+function loadExcel(event) {
+  const file = event.target.files[0];
+  const statusEl = document.getElementById('excel-status');
+  if (!file) return;
+  if (typeof XLSX === 'undefined') {
+    statusEl.textContent = 'No se pudo cargar el lector de Excel. Intenta de nuevo.';
+    return;
+  }
+  statusEl.textContent = 'Leyendo archivo...';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      if (!rawRows.length) { statusEl.textContent = 'El archivo está vacío.'; return; }
+
+      let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3 };
+      let startRow = 0;
+      const firstRow = rawRows[0].map(c => normalize(c));
+      if (firstRow.some(c => ['dni','nombre','apellidos','sexo'].includes(c))) {
+        startRow = 1;
+        headerIdx = {};
+        firstRow.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo'].includes(c)) headerIdx[c] = idx; });
+      }
+
+      const rows = rawRows.slice(startRow).map(r => ({
+        dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : r[0],
+        nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : r[1],
+        apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : r[2],
+        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : r[3]
+      }));
+
+      const { newRows, skipped, updated } = buildNewRows(rows);
+      statusEl.textContent = 'Guardando...';
+      await saveNewRows(newRows);
+      statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos.`;
+    } catch (err) {
+      statusEl.textContent = '⚠️ No se pudo leer o guardar el archivo. Detalle: ' + (err && err.message ? err.message : err);
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadTemplate() {
+  if (typeof XLSX === 'undefined') return;
+  const ws = XLSX.utils.json_to_sheet([{ nombre: 'Juan', apellidos: 'Perez Diaz', dni: '12345678', sexo: 'M' }]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+  XLSX.writeFile(wb, 'plantilla_invitados.xlsx');
+}
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('No se pudo cargar el módulo de Excel. Intenta de nuevo.');
+    return;
+  }
+  if (attendees.length === 0) {
+    alert('No hay datos para exportar todavía.');
+    return;
+  }
+  const rows = attendees
+    .slice()
+    .sort((a, b) => fullName(a).localeCompare(fullName(b)))
+    .map(a => ({
+      DNI: a.dni,
+      Nombre: a.nombre,
+      Apellidos: a.apellidos || '',
+      Sexo: a.sexo || '',
+      Estado: a.llego ? 'Presente' : 'Pendiente',
+      Hora: a.hora || ''
+    }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 22 }, { wch: 8 }, { wch: 10 }, { wch: 10 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
+  const fecha = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `asistencia_${fecha}.xlsx`);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function startClock() {
+  const el = document.getElementById('live-clock');
+  const tick = () => {
+    el.textContent = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+startClock();
+
+window.switchTab = switchTab;
+window.setFilter = setFilter;
+window.renderTable = renderTable;
+window.onSearchKeydown = onSearchKeydown;
+window.toggleCheckIn = toggleCheckIn;
+window.cycleSexo = cycleSexo;
+window.openAddModal = openAddModal;
+window.closeAddModal = closeAddModal;
+window.saveModalPerson = saveModalPerson;
+window.loadBulk = loadBulk;
+window.loadExcel = loadExcel;
+window.downloadTemplate = downloadTemplate;
+window.exportExcel = exportExcel;
+window.saveQuorum = saveQuorum;
+window.resetAllData = resetAllData;
+</script>
+</body>
+</html>
