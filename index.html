@@ -112,6 +112,8 @@
   .invitado-cell { display: flex; align-items: center; }
   .invitado-name { font-weight: 600; font-size: 14px; }
   .invitado-num { font-size: 11px; color: var(--text-muted); }
+  .num-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 8px; background: var(--celeste-bg); color: var(--celeste); font-weight: 700; font-size: 13px; }
+  #scan-feedback { display: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
   .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
   .badge.presente { background: var(--verde-bg); color: var(--verde); }
   .badge.pendiente { background: var(--amarillo-bg); color: var(--amarillo); }
@@ -175,6 +177,24 @@
   .proy-stat-label { font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; margin-bottom: 8px; }
   .proy-stat-num { font-size: 54px; font-weight: 900; line-height: 1; }
   .proy-stat-sub { font-size: 14px; opacity: 0.85; margin-top: 6px; font-weight: 600; }
+
+  .scan-banner { padding: 12px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 600; text-align: center; }
+  .scan-banner.ok { background: var(--verde-bg); color: var(--verde); }
+  .scan-banner.warn { background: var(--rojo-bg); color: var(--rojo); }
+
+  .print-badges { display: none; }
+  .badge-card { width: 260px; border: 2px dashed var(--border); border-radius: 14px; padding: 16px; text-align: center; break-inside: avoid; display: inline-block; margin: 8px; vertical-align: top; }
+  .badge-card .b-num { font-size: 13px; font-weight: 800; color: var(--celeste); letter-spacing: 1px; }
+  .badge-card .b-name { font-size: 16px; font-weight: 700; margin: 4px 0; }
+  .badge-card .b-dni { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .badge-card .b-qr { display: flex; justify-content: center; }
+  .badge-card .b-brand { font-size: 10px; color: var(--text-muted); margin-top: 6px; letter-spacing: 1px; }
+
+  @media print {
+    body * { visibility: hidden; }
+    .print-badges, .print-badges * { visibility: visible; }
+    .print-badges { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -196,6 +216,7 @@
       <div class="nav-item" onclick="switchTab('load')">Cargar / Importar</div>
       <div class="nav-item" onclick="openAddModal()">+ Agregar persona</div>
       <div class="nav-item" onclick="exportExcel()">⬇ Exportar Excel</div>
+      <div class="nav-item" onclick="printCredentials()">🎫 Credenciales QR</div>
     </div>
 
     <div class="nav-group">
@@ -267,7 +288,10 @@
       <div class="search-row">
         <input type="text" id="search" placeholder="Buscar por DNI o nombre..." oninput="renderTable()" onkeydown="onSearchKeydown(event)" autocomplete="off" />
         <span class="dni-badge">DNI</span>
+        <button class="primary" id="scan-btn" onclick="toggleScanner()">📷 Escanear QR</button>
       </div>
+      <div id="scan-feedback"></div>
+      <div id="reader" style="display:none; max-width: 340px; border-radius: 12px; overflow: hidden; margin-bottom: 14px;"></div>
       <div class="filter-chips">
         <div class="chip active" id="chip-all" onclick="setFilter('all')">Todos</div>
         <div class="chip" id="chip-in" onclick="setFilter('in')">Presentes</div>
@@ -276,7 +300,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Invitado</th><th>DNI</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
+            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -309,6 +333,13 @@
     </div>
     <div class="card">
       <p class="muted" style="margin:0;">Todo se guarda en una base de datos real (Firebase) y se sincroniza en vivo con cualquiera que tenga este mismo link abierto.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">CREDENCIALES</div>
+      <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">Imprimir credenciales con código QR</div>
+      <p class="muted" style="margin-top:0;">Genera una hoja lista para imprimir, con el número, nombre y código QR de cada invitado (para recortar y repartir como credencial antes del evento).</p>
+      <button class="celeste" onclick="printCredentials()">🖨 Generar e imprimir credenciales</button>
+      <p class="muted" id="print-status" style="margin-top:10px; margin-bottom:0;"></p>
     </div>
     <div class="card" style="border-color: var(--rojo);">
       <div class="card-eyebrow" style="color: var(--rojo);">ZONA DE PELIGRO</div>
@@ -392,7 +423,11 @@
   </div>
 </div>
 
+<div class="print-badges" id="print-badges"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import {
@@ -417,6 +452,9 @@ const quorumDocRef = doc(db, "config", "quorum");
 let attendees = [];
 let currentFilter = 'all';
 let quorumMeta = 0;
+let scanning = false;
+let scannerInstance = null;
+let lastScan = { text: '', time: 0 };
 
 function normalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -544,6 +582,7 @@ function switchTab(tab) {
   document.getElementById('proy-screen').classList.toggle('open', tab === 'proyeccion');
   document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
+  if (tab !== 'registro' && scanning) stopScanner();
   if (tab === 'registro') renderTable();
   if (tab === 'proyeccion') renderProyeccion();
 }
@@ -637,12 +676,12 @@ function renderTable() {
 
   tbody.innerHTML = rows.map((a, i) => `
     <tr>
+      <td><span class="num-badge">${a.numero || (i + 1)}</span></td>
       <td>
         <div class="invitado-cell">
           <div class="avatar">${escapeHtml(initials(a))}</div>
           <div>
             <div class="invitado-name">${escapeHtml(fullName(a))}</div>
-            <div class="invitado-num">Invitado #${String(i + 1).padStart(3, '0')}</div>
           </div>
         </div>
       </td>
@@ -692,6 +731,80 @@ function onSearchKeydown(event) {
   toggleCheckIn(person.dni);
 }
 
+function showScanFeedback(message, ok) {
+  const el = document.getElementById('scan-feedback');
+  if (!el) return;
+  el.textContent = message;
+  el.style.background = ok ? 'var(--verde-bg)' : 'var(--rojo-bg)';
+  el.style.color = ok ? 'var(--verde)' : 'var(--rojo)';
+  el.style.display = 'block';
+  clearTimeout(showScanFeedback._t);
+  showScanFeedback._t = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+async function processCode(rawText) {
+  const code = (rawText || '').toString().trim();
+  const now = Date.now();
+  if (code === lastScan.text && (now - lastScan.time) < 2500) return;
+  lastScan = { text: code, time: now };
+
+  let person = attendees.find(a => a.dni === code);
+  if (!person) {
+    const posibles = code.match(/\d{8}/g) || [];
+    for (const candidato of posibles) {
+      person = attendees.find(a => a.dni === candidato);
+      if (person) break;
+    }
+  }
+
+  if (!person) {
+    showScanFeedback('Código no reconocido, no coincide con ningún DNI', false);
+    return;
+  }
+  if (person.llego) {
+    showScanFeedback(fullName(person) + ' ya había registrado su llegada (' + (person.hora || '') + ')', true);
+    return;
+  }
+  await toggleCheckIn(person.dni);
+  showScanFeedback(fullName(person) + ' — llegada registrada', true);
+}
+
+async function toggleScanner() {
+  if (scanning) { await stopScanner(); return; }
+  if (typeof Html5Qrcode === 'undefined') {
+    showScanFeedback('No se pudo cargar el lector de cámara. Usa el buscador manual.', false);
+    return;
+  }
+  const readerEl = document.getElementById('reader');
+  readerEl.style.display = 'block';
+  document.getElementById('scan-btn').textContent = '⏹ Detener cámara';
+  try {
+    scannerInstance = new Html5Qrcode('reader');
+    await scannerInstance.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => { processCode(decodedText); },
+      () => {}
+    );
+    scanning = true;
+  } catch (err) {
+    readerEl.style.display = 'none';
+    document.getElementById('scan-btn').textContent = '📷 Escanear QR';
+    showScanFeedback('No se pudo acceder a la cámara. Verifica los permisos o usa el buscador manual.', false);
+    scanning = false;
+  }
+}
+
+async function stopScanner() {
+  try {
+    if (scannerInstance) { await scannerInstance.stop(); await scannerInstance.clear(); }
+  } catch (e) {}
+  scannerInstance = null;
+  scanning = false;
+  document.getElementById('reader').style.display = 'none';
+  document.getElementById('scan-btn').textContent = '📷 Escanear QR';
+}
+
 function openAddModal() {
   document.getElementById('modal-status').textContent = '';
   document.getElementById('add-modal-overlay').classList.add('open');
@@ -711,7 +824,10 @@ async function saveModalPerson() {
     return;
   }
   try {
-    await setDoc(doc(asistentesCol, dni), { nombre, apellidos, sexo, llego: false, hora: null }, { merge: true });
+    const esNuevo = !attendees.some(a => a.dni === dni);
+    const data = { nombre, apellidos, sexo };
+    if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); }
+    await setDoc(doc(asistentesCol, dni), data, { merge: true });
     document.getElementById('modal-nombre').value = '';
     document.getElementById('modal-apellidos').value = '';
     document.getElementById('modal-dni').value = '';
@@ -727,24 +843,34 @@ async function saveNewRows(rows) {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const batch = writeBatch(db);
     rows.slice(i, i + chunkSize).forEach(r => {
-      // merge:true solo escribe estos 3 campos — si la persona ya existe y ya
+      // merge:true solo escribe estos campos — si la persona ya existe y ya
       // había marcado su llegada (llego/hora), esos datos NO se tocan ni se pierden.
-      batch.set(doc(asistentesCol, r.dni), { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '' }, { merge: true });
+      const data = { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '' };
+      if (r.numero) data.numero = r.numero; // solo se asigna número a los nuevos
+      batch.set(doc(asistentesCol, r.dni), data, { merge: true });
     });
     await batch.commit();
   }
+}
+
+function nextNumero() {
+  const max = attendees.reduce((m, a) => Math.max(m, a.numero || 0), 0);
+  return max + 1;
 }
 
 function buildNewRows(rows) {
   // rows: [{dni, nombre, apellidos, sexo}]
   // Ya NO se descartan los DNI repetidos: si la persona ya existe, se actualiza su
   // nombre/apellidos/sexo (por ejemplo, para corregir un error de tipeo). Solo se
-  // descartan filas sin DNI o sin nombre.
+  // descartan filas sin DNI o sin nombre. A los NUEVOS se les asigna un número de
+  // invitado fijo y consecutivo (para las credenciales QR); a los que ya existían
+  // no se les toca su número.
   let skipped = 0;
   let updated = 0;
   const existentes = new Set(attendees.map(a => a.dni));
   const vistosEnEsteArchivo = new Set();
   const newRows = [];
+  let siguienteNumero = nextNumero();
   rows.forEach(r => {
     const dni = (r.dni === undefined || r.dni === null) ? '' : String(r.dni).trim();
     const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).trim();
@@ -754,8 +880,14 @@ function buildNewRows(rows) {
     if (!dni || !nombre) { skipped++; return; }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
-    if (existentes.has(dni)) updated++;
-    newRows.push({ dni, nombre, apellidos, sexo });
+    const esNuevo = !existentes.has(dni);
+    if (esNuevo) {
+      newRows.push({ dni, nombre, apellidos, sexo, numero: siguienteNumero });
+      siguienteNumero++;
+    } else {
+      updated++;
+      newRows.push({ dni, nombre, apellidos, sexo });
+    }
   });
   return { newRows, skipped, updated };
 }
@@ -829,6 +961,73 @@ function loadExcel(event) {
   reader.readAsArrayBuffer(file);
 }
 
+function printCredentials() {
+  const statusEl = document.getElementById('print-status');
+  if (attendees.length === 0) {
+    statusEl.textContent = 'No hay invitados cargados todavía.';
+    return;
+  }
+  if (typeof QRCode === 'undefined') {
+    statusEl.textContent = '⚠️ No se pudo cargar el generador de QR. Intenta de nuevo.';
+    return;
+  }
+  statusEl.textContent = 'Generando credenciales, espera un momento...';
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    statusEl.textContent = '⚠️ El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio e intenta de nuevo.';
+    return;
+  }
+
+  const rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+
+  win.document.write(`
+    <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Credenciales · Congreso 2026</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: -apple-system, sans-serif; margin: 0; padding: 20px; background: #f1f3f6; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .card { border: 2px dashed #94a3b8; border-radius: 14px; padding: 14px; text-align: center; background: white; page-break-inside: avoid; }
+      .card .brand { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #0b1c33; }
+      .card .brand span { color: #0ea5e9; }
+      .card .numero { font-size: 12px; color: #64748b; margin: 4px 0; font-weight: 700; }
+      .card .qr { margin: 8px auto; }
+      .card .nombre { font-size: 13px; font-weight: 700; margin-top: 6px; line-height: 1.2; }
+      .card .dni { font-size: 11px; color: #64748b; margin-top: 2px; }
+      .toolbar { text-align:center; margin-bottom: 16px; }
+      .toolbar button { padding: 10px 20px; font-size: 14px; border-radius: 8px; border: none; background: #0b1c33; color: white; cursor: pointer; }
+      @media print { .toolbar { display: none; } body { background: white; padding: 0; } }
+    </style></head><body>
+    <div class="toolbar"><button onclick="window.print()">🖨 Imprimir esta hoja</button></div>
+    <div class="grid" id="grid"></div>
+    </body></html>
+  `);
+  win.document.close();
+
+  const qrLib = win.document.createElement('script');
+  qrLib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  qrLib.onload = () => {
+    const grid = win.document.getElementById('grid');
+    rows.forEach(a => {
+      const card = win.document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="brand">CONGRESO <span>2026</span></div>
+        <div class="numero">N° ${a.numero || '—'}</div>
+        <div class="qr" id="qr-${a.dni}"></div>
+        <div class="nombre">${escapeHtml(fullName(a))}</div>
+        <div class="dni">DNI ${escapeHtml(a.dni)}</div>
+      `;
+      grid.appendChild(card);
+      new win.QRCode(win.document.getElementById('qr-' + a.dni), {
+        text: a.dni, width: 110, height: 110
+      });
+    });
+    statusEl.textContent = `Listo, se generaron ${rows.length} credenciales en la nueva pestaña.`;
+  };
+  win.document.body.appendChild(qrLib);
+}
+
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return;
   const ws = XLSX.utils.json_to_sheet([{ nombre: 'Juan', apellidos: 'Perez Diaz', dni: '12345678', sexo: 'M' }]);
@@ -899,6 +1098,8 @@ window.downloadTemplate = downloadTemplate;
 window.exportExcel = exportExcel;
 window.saveQuorum = saveQuorum;
 window.resetAllData = resetAllData;
+window.toggleScanner = toggleScanner;
+window.printCredentials = printCredentials;
 </script>
 </body>
 </html>
