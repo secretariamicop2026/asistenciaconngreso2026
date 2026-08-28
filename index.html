@@ -71,8 +71,8 @@
   button.celeste { background: var(--celeste); color: white; border-color: var(--celeste); }
   button:active { opacity: 0.8; }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
-  .stat-card { border-radius: 14px; padding: 16px; color: white; box-shadow: 0 2px 6px rgba(11,28,51,0.08); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card { border-radius: 14px; padding: 16px; color: white; box-shadow: 0 2px 6px rgba(11,28,51,0.08); min-width: 0; overflow-wrap: break-word; }
   .stat-card.top-celeste { background: linear-gradient(155deg, var(--celeste) 0%, #0284c7 100%); }
   .stat-card.top-verde { background: linear-gradient(155deg, var(--verde) 0%, #15803d 100%); }
   .stat-card.top-amarillo { background: linear-gradient(155deg, var(--amarillo) 0%, #b45309 100%); }
@@ -173,7 +173,7 @@
   .quorum-progress-bar { height: 16px; border-radius: 12px; background: rgba(0,0,0,0.25); overflow: hidden; margin: 18px auto 0; max-width: 700px; }
   .quorum-progress-fill { height: 100%; background: white; border-radius: 12px; transition: width 0.6s ease; }
 
-  .proy-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .proy-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
   .proy-stat { border-radius: 22px; padding: 24px; }
   .proy-stat.celeste { background: linear-gradient(155deg, var(--celeste) 0%, #0369a1 100%); }
   .proy-stat.verde { background: linear-gradient(155deg, var(--verde) 0%, #14532d 100%); }
@@ -216,9 +216,9 @@
     .topbar-title { font-size: 22px; }
     .topbar-subtitle { font-size: 12px; }
     .hero-clock { font-size: 13px; }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .stat-num { font-size: 22px; }
-    .stat-card { padding: 12px; }
+    .stat-grid { display: flex; flex-direction: column; gap: 10px; }
+    .stat-card { width: 100%; padding: 14px; }
+    .stat-num { font-size: 24px; }
     .card { padding: 14px; }
     .card-title { font-size: 18px; }
     .search-row { flex-wrap: wrap; }
@@ -233,15 +233,10 @@
     .quorum-num { font-size: 54px; }
     .quorum-label { font-size: 15px; }
     .quorum-meta { font-size: 14px; }
-    .proy-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .proy-grid { display: flex; flex-direction: column; gap: 12px; }
+    .proy-stat { width: 100%; }
     .proy-stat-num { font-size: 34px; }
     .proy-back { position: static; margin-bottom: 16px; display: inline-block; }
-  }
-
-  @media (max-width: 480px) {
-    .stat-grid { grid-template-columns: 1fr 1fr; }
-    .proy-grid { grid-template-columns: 1fr; }
-    table { min-width: 560px; }
   }
 </style>
 </head>
