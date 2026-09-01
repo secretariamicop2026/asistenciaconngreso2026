@@ -36,6 +36,9 @@
   .shell { display: flex; align-items: flex-start; min-height: 100vh; width: 100%; max-width: 100vw; overflow-x: hidden; }
 
   .sidebar { width: 220px; flex-shrink: 0; background: var(--navy); min-height: 100vh; padding: 22px 14px; color: white; position: sticky; top: 0; }
+  .sidebar-close { display: none; }
+  .mobile-topbar { display: none; }
+  .sidebar-overlay { display: none; }
   .sidebar-logo { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: white; margin-bottom: 4px; }
   .sidebar-logo span { color: var(--celeste); }
   .sidebar-sub { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
@@ -202,20 +205,43 @@
 
   /* ===== Responsivo: tablet y celular ===== */
   @media (max-width: 900px) {
-    .shell { flex-direction: column; }
-    .sidebar {
-      width: 100%; min-height: auto; position: static;
-      padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    .mobile-topbar {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--navy); color: white; padding: 14px 16px;
+      position: sticky; top: 0; z-index: 60;
     }
-    .sidebar-logo, .sidebar-sub { width: 100%; }
-    .sidebar-sub { margin-bottom: 4px; }
-    .nav-group { margin-bottom: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .nav-pill { margin-bottom: 0; }
-    .nav-item { padding: 7px 10px; margin-bottom: 0; white-space: nowrap; }
+    .hamburger-btn {
+      background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25);
+      font-size: 20px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; flex-shrink: 0;
+    }
+    .mobile-topbar-title { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+    .mobile-topbar-title span { color: var(--celeste); }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; z-index: 80;
+      width: 260px; max-width: 82vw;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      overflow-y: auto;
+      display: block;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-close {
+      display: block; position: absolute; top: 14px; right: 14px;
+      background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.25);
+      width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 15px;
+    }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 70;
+    }
+    .sidebar-overlay.open { display: block; }
+
+    .nav-group { display: block; }
+    .nav-item { display: block; padding: 9px 12px; white-space: normal; }
+
+    .shell { flex-direction: column; }
     .main { padding: 16px; }
-    .topbar-title { font-size: 22px; }
-    .topbar-subtitle { font-size: 12px; }
-    .hero-clock { font-size: 13px; }
+    .topbar { display: none; }
     .stat-grid { display: flex; flex-direction: column; gap: 10px; }
     .stat-card { width: 100%; padding: 14px; }
     .stat-num { font-size: 24px; }
@@ -243,29 +269,36 @@
 <body>
 
 <div class="shell">
-  <div class="sidebar">
+  <div class="mobile-topbar">
+    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+    <div class="mobile-topbar-title">CONGRESO <span>2026</span></div>
+  </div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
+  <div class="sidebar" id="sidebar">
+    <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
-    <div class="sidebar-sub">Misión Centro-Oeste</div>
+    <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
-      <div class="nav-item" onclick="switchTab('registro'); setFilter('all')">Todos</div>
-      <div class="nav-item" onclick="switchTab('registro'); setFilter('in')">Presentes</div>
-      <div class="nav-item" onclick="switchTab('registro'); setFilter('out')">Por llegar</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('all'); closeMobileMenu()">Todos</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('in'); closeMobileMenu()">Presentes</div>
+      <div class="nav-item" onclick="switchTab('registro'); setFilter('out'); closeMobileMenu()">Por llegar</div>
     </div>
 
     <div class="nav-group">
       <div class="nav-pill amarillo">GESTIÓN DE LISTA</div>
-      <div class="nav-item" onclick="switchTab('load')">Cargar / Importar</div>
-      <div class="nav-item" onclick="openAddModal()">+ Agregar persona</div>
-      <div class="nav-item" onclick="exportExcel()">⬇ Exportar Excel</div>
-      <div class="nav-item" onclick="printCredentials()">🎫 Credenciales QR</div>
+      <div class="nav-item" onclick="switchTab('load'); closeMobileMenu()">Cargar / Importar</div>
+      <div class="nav-item" onclick="openAddModal(); closeMobileMenu()">+ Agregar persona</div>
+      <div class="nav-item" onclick="exportExcel(); closeMobileMenu()">⬇ Exportar Excel</div>
+      <div class="nav-item" onclick="printCredentials(); closeMobileMenu()">🎫 Credenciales QR</div>
     </div>
 
     <div class="nav-group">
       <div class="nav-pill verde">EN VIVO</div>
       <div class="muted" id="last-sync" style="color: rgba(255,255,255,0.7); padding: 0 14px;"><span class="live-dot"></span>Conectando...</div>
-      <div class="nav-item" onclick="switchTab('proyeccion')">📊 Asistencia (proyectar)</div>
+      <div class="nav-item" onclick="switchTab('proyeccion'); closeMobileMenu()">📊 Asistencia (proyectar)</div>
     </div>
   </div>
 
@@ -619,6 +652,15 @@ async function resetAllData() {
   } catch (e) {
     statusEl.textContent = '⚠️ Error al borrar: ' + (e && e.message ? e.message : e);
   }
+}
+
+function toggleMobileMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
 function switchTab(tab) {
@@ -1127,6 +1169,8 @@ function startClock() {
 startClock();
 
 window.switchTab = switchTab;
+window.toggleMobileMenu = toggleMobileMenu;
+window.closeMobileMenu = closeMobileMenu;
 window.setFilter = setFilter;
 window.renderTable = renderTable;
 window.onSearchKeydown = onSearchKeydown;
