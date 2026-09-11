@@ -1070,8 +1070,9 @@ async function saveNewRows(rows) {
     rows.slice(i, i + chunkSize).forEach(r => {
       // merge:true solo escribe estos campos — si la persona ya existe y ya
       // había marcado su llegada (llego/hora), esos datos NO se tocan ni se pierden.
-      const data = { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '' };
+      const data = { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '', zona: r.zona || '' };
       if (r.numero) data.numero = r.numero; // solo se asigna número a los nuevos
+      if (r.hasOwnProperty('delegado')) data.delegado = r.delegado;
       batch.set(doc(asistentesCol, r.dni), data, { merge: true });
     });
     await batch.commit();
