@@ -311,6 +311,7 @@
   <div class="app">
   <div class="error-banner" id="error-banner"></div>
 
+  <div id="header-stats">
   <div class="topbar">
     <div>
       <div class="topbar-title">Control de asistencia</div>
@@ -361,6 +362,7 @@
       </div>
     </div>
   </div>
+  </div>
 
   <div id="view-registro">
     <div class="card">
@@ -381,7 +383,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
+            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Zona</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -430,6 +432,45 @@
       <p class="muted" id="reset-status" style="margin-top:10px; margin-bottom:0;"></p>
     </div>
   </div>
+
+  <div id="view-delegados" style="display:none;">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Lista de delegados</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="search-row">
+        <input type="text" id="deleg-search" placeholder="Escribe el nombre de la persona..." oninput="renderDelegSearch()" autocomplete="off" />
+        <select id="deleg-zona-select" onchange="renderDelegSearch()" style="max-width: 160px; flex-shrink: 0;">
+          <option value="">Todas las zonas</option>
+          <option value="1">Zona 1</option>
+          <option value="2">Zona 2</option>
+          <option value="3">Zona 3</option>
+          <option value="4">Zona 4</option>
+          <option value="5">Zona 5</option>
+          <option value="6">Zona 6</option>
+          <option value="7">Zona 7</option>
+        </select>
+      </div>
+      <div class="card" id="deleg-results" style="padding:0; margin-top:12px;">
+        <div class="empty">Elige una zona y/o escribe un nombre para buscar</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>N°</th><th>Nombre del delegado</th><th>Zona</th></tr>
+          </thead>
+          <tbody id="deleg-list"></tbody>
+        </table>
+        <div class="empty" id="deleg-list-empty">Todavía no se ha elegido a nadie</div>
+      </div>
+    </div>
+  </div>
   </div>
   </div>
 </div>
@@ -473,52 +514,6 @@
   </div>
 </div>
 
-<div id="view-delegados" style="display:none;">
-  <div class="app">
-    <div class="topbar">
-      <div>
-        <div class="topbar-title">Elegir delegados</div>
-        <div class="topbar-subtitle">Congreso 2026 · Un representante por zona</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="stat-row" style="display:flex; gap:14px; margin-bottom: 16px; flex-wrap: wrap;">
-        <div class="stat top-rojo" style="flex:1; min-width:160px; background: linear-gradient(155deg, var(--rojo) 0%, #b91c1c 100%); color:white; border-radius:14px; padding:16px;">
-          <div class="stat-label" style="color: rgba(255,255,255,0.85);">Delegados elegidos</div>
-          <div class="stat-num" id="deleg-total" style="color:white;">0</div>
-        </div>
-      </div>
-
-      <div class="card-eyebrow">FILTRAR POR ZONA</div>
-      <div class="filter-chips" id="zona-chips" style="flex-wrap: wrap;">
-        <div class="chip active" data-zona="" onclick="setZonaFilter('')">Todas</div>
-        <div class="chip" data-zona="1" onclick="setZonaFilter('1')">Zona 1</div>
-        <div class="chip" data-zona="2" onclick="setZonaFilter('2')">Zona 2</div>
-        <div class="chip" data-zona="3" onclick="setZonaFilter('3')">Zona 3</div>
-        <div class="chip" data-zona="4" onclick="setZonaFilter('4')">Zona 4</div>
-        <div class="chip" data-zona="5" onclick="setZonaFilter('5')">Zona 5</div>
-        <div class="chip" data-zona="6" onclick="setZonaFilter('6')">Zona 6</div>
-        <div class="chip" data-zona="7" onclick="setZonaFilter('7')">Zona 7</div>
-      </div>
-
-      <div class="search-row" style="margin-top:14px;">
-        <input type="text" id="deleg-search" placeholder="Escribe el nombre de la persona..." oninput="renderDelegSearch()" autocomplete="off" />
-      </div>
-      <div class="card" id="deleg-results" style="padding:0; margin-top:12px;">
-        <div class="empty">Elige una zona y/o escribe un nombre para buscar</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-eyebrow">LISTA EN VIVO</div>
-      <div class="card-title" style="font-size:20px;">Delegados ya elegidos</div>
-      <div class="table-wrap" id="deleg-list">
-        <div class="empty">Todavía no se ha elegido a nadie</div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="modal-overlay" id="add-modal-overlay">
   <div class="modal">
@@ -732,6 +727,7 @@ function closeMobileMenu() {
 
 function switchTab(tab) {
   document.getElementById('proy-screen').classList.toggle('open', tab === 'proyeccion');
+  document.getElementById('header-stats').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
   document.getElementById('view-delegados').style.display = tab === 'delegados' ? 'block' : 'none';
@@ -785,28 +781,19 @@ function renderProyeccion() {
   }
 }
 
-let currentZonaFilter = '';
-
-function setZonaFilter(zona) {
-  currentZonaFilter = zona;
-  document.querySelectorAll('#zona-chips .chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.zona === zona);
-  });
-  renderDelegSearch();
-}
-
 function renderDelegSearch() {
   const q = normalize(document.getElementById('deleg-search').value);
+  const zonaSel = document.getElementById('deleg-zona-select').value;
   const resultsEl = document.getElementById('deleg-results');
 
   let candidatos = attendees.slice();
-  if (currentZonaFilter) candidatos = candidatos.filter(a => String(a.zona || '') === currentZonaFilter);
+  if (zonaSel) candidatos = candidatos.filter(a => String(a.zona || '') === zonaSel);
 
   if (q) {
     candidatos = candidatos.filter(a => normalize(fullName(a)).includes(q) || normalize(a.dni).includes(q));
   }
 
-  if (!currentZonaFilter && !q) {
+  if (!zonaSel && !q) {
     resultsEl.innerHTML = '<div class="empty">Elige una zona y/o escribe un nombre para buscar</div>';
     return;
   }
@@ -821,8 +808,8 @@ function renderDelegSearch() {
   resultsEl.innerHTML = candidatos.map(a => `
     <div class="result">
       <div>
-        <div class="result-name">${escapeHtml(fullName(a))}</div>
-        <div class="result-dni">DNI ${escapeHtml(a.dni)}${a.zona ? ' · Zona ' + escapeHtml(String(a.zona)) : ' · sin zona'}</div>
+        <div class="result-name">${escapeHtml(fullName(a))} ${a.zona ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
+        <div class="result-dni">DNI ${escapeHtml(a.dni)}</div>
       </div>
       ${a.delegado
         ? `<span class="badge-in">✓ Ya es delegado</span>`
@@ -843,21 +830,26 @@ async function toggleDelegado(dni) {
 }
 
 function renderDelegList() {
-  const delegados = attendees.filter(a => a.delegado).sort((a, b) => fullName(a).localeCompare(fullName(b)));
-  document.getElementById('deleg-total').textContent = delegados.length;
+  const delegados = attendees.filter(a => a.delegado).sort((a, b) => {
+    const za = String(a.zona || 'zzz');
+    const zb = String(b.zona || 'zzz');
+    if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
+    return fullName(a).localeCompare(fullName(b));
+  });
   const listEl = document.getElementById('deleg-list');
+  const emptyEl = document.getElementById('deleg-list-empty');
   if (delegados.length === 0) {
-    listEl.innerHTML = '<div class="empty">Todavía no se ha elegido a nadie</div>';
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
     return;
   }
-  listEl.innerHTML = delegados.map(a => `
-    <div class="list-row in" onclick="toggleDelegado('${a.dni}')" title="Tocar para quitar">
-      <div>
-        <div class="row-name">${escapeHtml(fullName(a))}</div>
-        <div class="row-dni">DNI ${escapeHtml(a.dni)}${a.zona ? ' · Zona ' + escapeHtml(String(a.zona)) : ''}</div>
-      </div>
-      <div class="status-dot"></div>
-    </div>
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = delegados.map((a, i) => `
+    <tr onclick="toggleDelegado('${a.dni}')" style="cursor:pointer;" title="Tocar para quitar">
+      <td><span class="num-badge">${i + 1}</span></td>
+      <td>${escapeHtml(fullName(a))}</td>
+      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+    </tr>
   `).join('');
 }
 
@@ -916,6 +908,7 @@ function renderTable() {
         </div>
       </td>
       <td>${escapeHtml(a.dni)}</td>
+      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
       <td><span class="sexo-tag" title="Click para corregir" onclick="cycleSexo('${a.dni}')">${a.sexo === 'M' ? '♂ M' : a.sexo === 'F' ? '♀ F' : '— '}</span></td>
       <td>${a.llego
         ? '<span class="badge presente"><span class="badge-dot"></span>Presente</span>'
@@ -1107,8 +1100,11 @@ function buildNewRows(rows) {
     const dni = (r.dni === undefined || r.dni === null) ? '' : String(r.dni).trim();
     const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).trim();
     const apellidos = (r.apellidos === undefined || r.apellidos === null) ? '' : String(r.apellidos).trim();
-    const sexoRaw = (r.sexo === undefined || r.sexo === null) ? '' : String(r.sexo).trim().toUpperCase();
-    const sexo = (sexoRaw === 'M' || sexoRaw === 'F') ? sexoRaw : guessSexo(nombre);
+    const sexoRaw = normalize(r.sexo);
+    let sexo;
+    if (sexoRaw === 'm' || sexoRaw === 'masculino') sexo = 'M';
+    else if (sexoRaw === 'f' || sexoRaw === 'femenino') sexo = 'F';
+    else sexo = guessSexo(nombre);
     const zona = (r.zona === undefined || r.zona === null) ? '' : String(r.zona).trim();
     if (!dni || !nombre) { skipped++; return; }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
@@ -1335,7 +1331,6 @@ window.exportExcel = exportExcel;
 window.saveQuorum = saveQuorum;
 window.resetAllData = resetAllData;
 window.toggleScanner = toggleScanner;
-window.setZonaFilter = setZonaFilter;
 window.renderDelegSearch = renderDelegSearch;
 window.toggleDelegado = toggleDelegado;
 window.printCredentials = printCredentials;
