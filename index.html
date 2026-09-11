@@ -300,6 +300,11 @@
       <div class="muted" id="last-sync" style="color: rgba(255,255,255,0.7); padding: 0 14px;"><span class="live-dot"></span>Conectando...</div>
       <div class="nav-item" onclick="switchTab('proyeccion'); closeMobileMenu()">📊 Asistencia (proyectar)</div>
     </div>
+
+    <div class="nav-group">
+      <div class="nav-pill rojo">DELEGADOS</div>
+      <div class="nav-item" onclick="switchTab('delegados'); closeMobileMenu()">🗳️ Elegir delegados</div>
+    </div>
   </div>
 
   <div class="main">
@@ -468,6 +473,53 @@
   </div>
 </div>
 
+<div id="view-delegados" style="display:none;">
+  <div class="app">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Elegir delegados</div>
+        <div class="topbar-subtitle">Congreso 2026 · Un representante por zona</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stat-row" style="display:flex; gap:14px; margin-bottom: 16px; flex-wrap: wrap;">
+        <div class="stat top-rojo" style="flex:1; min-width:160px; background: linear-gradient(155deg, var(--rojo) 0%, #b91c1c 100%); color:white; border-radius:14px; padding:16px;">
+          <div class="stat-label" style="color: rgba(255,255,255,0.85);">Delegados elegidos</div>
+          <div class="stat-num" id="deleg-total" style="color:white;">0</div>
+        </div>
+      </div>
+
+      <div class="card-eyebrow">FILTRAR POR ZONA</div>
+      <div class="filter-chips" id="zona-chips" style="flex-wrap: wrap;">
+        <div class="chip active" data-zona="" onclick="setZonaFilter('')">Todas</div>
+        <div class="chip" data-zona="1" onclick="setZonaFilter('1')">Zona 1</div>
+        <div class="chip" data-zona="2" onclick="setZonaFilter('2')">Zona 2</div>
+        <div class="chip" data-zona="3" onclick="setZonaFilter('3')">Zona 3</div>
+        <div class="chip" data-zona="4" onclick="setZonaFilter('4')">Zona 4</div>
+        <div class="chip" data-zona="5" onclick="setZonaFilter('5')">Zona 5</div>
+        <div class="chip" data-zona="6" onclick="setZonaFilter('6')">Zona 6</div>
+        <div class="chip" data-zona="7" onclick="setZonaFilter('7')">Zona 7</div>
+      </div>
+
+      <div class="search-row" style="margin-top:14px;">
+        <input type="text" id="deleg-search" placeholder="Escribe el nombre de la persona..." oninput="renderDelegSearch()" autocomplete="off" />
+      </div>
+      <div class="card" id="deleg-results" style="padding:0; margin-top:12px;">
+        <div class="empty">Elige una zona y/o escribe un nombre para buscar</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-eyebrow">LISTA EN VIVO</div>
+      <div class="card-title" style="font-size:20px;">Delegados ya elegidos</div>
+      <div class="table-wrap" id="deleg-list">
+        <div class="empty">Todavía no se ha elegido a nadie</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="add-modal-overlay">
   <div class="modal">
     <button class="modal-close" onclick="closeAddModal()">✕</button>
@@ -492,6 +544,19 @@
         <option value="">Sin especificar</option>
         <option value="M">Masculino</option>
         <option value="F">Femenino</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Zona</label>
+      <select id="modal-zona">
+        <option value="">Sin zona</option>
+        <option value="1">Zona 1</option>
+        <option value="2">Zona 2</option>
+        <option value="3">Zona 3</option>
+        <option value="4">Zona 4</option>
+        <option value="5">Zona 5</option>
+        <option value="6">Zona 6</option>
+        <option value="7">Zona 7</option>
       </select>
     </div>
     <button class="primary" style="width:100%;" onclick="saveModalPerson()">+ Guardar invitado</button>
@@ -574,6 +639,8 @@ onSnapshot(asistentesCol, (snapshot) => {
   updateStats();
   renderTable();
   renderProyeccion();
+  renderDelegSearch();
+  renderDelegList();
   document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>En vivo · ' + new Date().toLocaleTimeString();
 }, (err) => {
   showError('⚠️ No se pudo conectar a la base de datos. Revisa tu conexión. Detalle: ' + (err && err.message ? err.message : err));
@@ -667,9 +734,11 @@ function switchTab(tab) {
   document.getElementById('proy-screen').classList.toggle('open', tab === 'proyeccion');
   document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
+  document.getElementById('view-delegados').style.display = tab === 'delegados' ? 'block' : 'none';
   if (tab !== 'registro' && scanning) stopScanner();
   if (tab === 'registro') renderTable();
   if (tab === 'proyeccion') renderProyeccion();
+  if (tab === 'delegados') { renderDelegSearch(); renderDelegList(); }
 }
 
 function renderProyeccion() {
@@ -714,6 +783,82 @@ function renderProyeccion() {
     quorumBlock.className = 'quorum-block rojo';
     quorumMetaEl.textContent = quorumPct + '% de la meta de ' + quorumMeta;
   }
+}
+
+let currentZonaFilter = '';
+
+function setZonaFilter(zona) {
+  currentZonaFilter = zona;
+  document.querySelectorAll('#zona-chips .chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.zona === zona);
+  });
+  renderDelegSearch();
+}
+
+function renderDelegSearch() {
+  const q = normalize(document.getElementById('deleg-search').value);
+  const resultsEl = document.getElementById('deleg-results');
+
+  let candidatos = attendees.slice();
+  if (currentZonaFilter) candidatos = candidatos.filter(a => String(a.zona || '') === currentZonaFilter);
+
+  if (q) {
+    candidatos = candidatos.filter(a => normalize(fullName(a)).includes(q) || normalize(a.dni).includes(q));
+  }
+
+  if (!currentZonaFilter && !q) {
+    resultsEl.innerHTML = '<div class="empty">Elige una zona y/o escribe un nombre para buscar</div>';
+    return;
+  }
+
+  candidatos = candidatos.sort((a, b) => fullName(a).localeCompare(fullName(b))).slice(0, 20);
+
+  if (candidatos.length === 0) {
+    resultsEl.innerHTML = '<div class="empty">No se encontró a nadie con ese filtro</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = candidatos.map(a => `
+    <div class="result">
+      <div>
+        <div class="result-name">${escapeHtml(fullName(a))}</div>
+        <div class="result-dni">DNI ${escapeHtml(a.dni)}${a.zona ? ' · Zona ' + escapeHtml(String(a.zona)) : ' · sin zona'}</div>
+      </div>
+      ${a.delegado
+        ? `<span class="badge-in">✓ Ya es delegado</span>`
+        : `<button class="btn-checkin" style="background: var(--rojo); border-color: var(--rojo);" onclick="toggleDelegado('${a.dni}')">Marcar como delegado</button>`}
+    </div>
+  `).join('');
+}
+
+async function toggleDelegado(dni) {
+  const person = attendees.find(a => a.dni === dni);
+  if (!person) return;
+  try {
+    await setDoc(doc(asistentesCol, dni), { delegado: !person.delegado }, { merge: true });
+    renderDelegSearch();
+  } catch (e) {
+    showError('⚠️ No se pudo actualizar. ' + (e && e.message ? e.message : e));
+  }
+}
+
+function renderDelegList() {
+  const delegados = attendees.filter(a => a.delegado).sort((a, b) => fullName(a).localeCompare(fullName(b)));
+  document.getElementById('deleg-total').textContent = delegados.length;
+  const listEl = document.getElementById('deleg-list');
+  if (delegados.length === 0) {
+    listEl.innerHTML = '<div class="empty">Todavía no se ha elegido a nadie</div>';
+    return;
+  }
+  listEl.innerHTML = delegados.map(a => `
+    <div class="list-row in" onclick="toggleDelegado('${a.dni}')" title="Tocar para quitar">
+      <div>
+        <div class="row-name">${escapeHtml(fullName(a))}</div>
+        <div class="row-dni">DNI ${escapeHtml(a.dni)}${a.zona ? ' · Zona ' + escapeHtml(String(a.zona)) : ''}</div>
+      </div>
+      <div class="status-dot"></div>
+    </div>
+  `).join('');
 }
 
 function setFilter(filter) {
@@ -903,6 +1048,7 @@ async function saveModalPerson() {
   const apellidos = document.getElementById('modal-apellidos').value.trim();
   const dni = document.getElementById('modal-dni').value.trim();
   const sexo = document.getElementById('modal-sexo').value || guessSexo(nombre);
+  const zona = document.getElementById('modal-zona').value;
   const statusEl = document.getElementById('modal-status');
   if (!nombre || !dni) {
     statusEl.textContent = 'Nombre y DNI son obligatorios.';
@@ -910,13 +1056,14 @@ async function saveModalPerson() {
   }
   try {
     const esNuevo = !attendees.some(a => a.dni === dni);
-    const data = { nombre, apellidos, sexo };
-    if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); }
+    const data = { nombre, apellidos, sexo, zona };
+    if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); data.delegado = false; }
     await setDoc(doc(asistentesCol, dni), data, { merge: true });
     document.getElementById('modal-nombre').value = '';
     document.getElementById('modal-apellidos').value = '';
     document.getElementById('modal-dni').value = '';
     document.getElementById('modal-sexo').value = '';
+    document.getElementById('modal-zona').value = '';
     closeAddModal();
   } catch (e) {
     statusEl.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e);
@@ -962,16 +1109,17 @@ function buildNewRows(rows) {
     const apellidos = (r.apellidos === undefined || r.apellidos === null) ? '' : String(r.apellidos).trim();
     const sexoRaw = (r.sexo === undefined || r.sexo === null) ? '' : String(r.sexo).trim().toUpperCase();
     const sexo = (sexoRaw === 'M' || sexoRaw === 'F') ? sexoRaw : guessSexo(nombre);
+    const zona = (r.zona === undefined || r.zona === null) ? '' : String(r.zona).trim();
     if (!dni || !nombre) { skipped++; return; }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
     const esNuevo = !existentes.has(dni);
     if (esNuevo) {
-      newRows.push({ dni, nombre, apellidos, sexo, numero: siguienteNumero });
+      newRows.push({ dni, nombre, apellidos, sexo, zona, numero: siguienteNumero, delegado: false });
       siguienteNumero++;
     } else {
       updated++;
-      newRows.push({ dni, nombre, apellidos, sexo });
+      newRows.push({ dni, nombre, apellidos, sexo, zona });
     }
   });
   return { newRows, skipped, updated };
@@ -987,7 +1135,7 @@ async function loadBulk() {
   }
   const rows = lines.map(line => {
     const parts = line.split(',').map(p => p.trim());
-    return { dni: parts[0], nombre: parts[1], apellidos: parts[2], sexo: parts[3] };
+    return { dni: parts[0], nombre: parts[1], apellidos: parts[2], sexo: parts[3], zona: parts[4] };
   });
   const { newRows, skipped, updated } = buildNewRows(rows);
   statusEl.textContent = 'Guardando...';
@@ -1018,20 +1166,21 @@ function loadExcel(event) {
       const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       if (!rawRows.length) { statusEl.textContent = 'El archivo está vacío.'; return; }
 
-      let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3 };
+      let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3, zona: 4 };
       let startRow = 0;
       const firstRow = rawRows[0].map(c => normalize(c));
-      if (firstRow.some(c => ['dni','nombre','apellidos','sexo'].includes(c))) {
+      if (firstRow.some(c => ['dni','nombre','apellidos','sexo','zona'].includes(c))) {
         startRow = 1;
         headerIdx = {};
-        firstRow.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo'].includes(c)) headerIdx[c] = idx; });
+        firstRow.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo','zona'].includes(c)) headerIdx[c] = idx; });
       }
 
       const rows = rawRows.slice(startRow).map(r => ({
         dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : r[0],
         nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : r[1],
         apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : r[2],
-        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : r[3]
+        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : r[3],
+        zona: headerIdx.zona !== undefined ? r[headerIdx.zona] : r[4]
       }));
 
       const { newRows, skipped, updated } = buildNewRows(rows);
@@ -1186,6 +1335,9 @@ window.exportExcel = exportExcel;
 window.saveQuorum = saveQuorum;
 window.resetAllData = resetAllData;
 window.toggleScanner = toggleScanner;
+window.setZonaFilter = setZonaFilter;
+window.renderDelegSearch = renderDelegSearch;
+window.toggleDelegado = toggleDelegado;
 window.printCredentials = printCredentials;
 </script>
 </body>
