@@ -102,6 +102,13 @@
   .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
   .search-row input[type=text] { flex: 1; }
   .dni-badge { font-size: 11px; font-weight: 700; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg); }
+  .result { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-wrap: nowrap; }
+  .result:last-child { border-bottom: none; }
+  .result > div:first-child { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .result-name { font-weight: 600; font-size: 14px; }
+  .result-dni { font-size: 12px; color: var(--text-muted); }
+  .result .btn-checkin, .result .badge-in { flex-shrink: 0; }
+  .badge-in { font-size: 13px; font-weight: 600; color: var(--verde); white-space: nowrap; }
 
   input[type=text], input[type=number], textarea, select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; }
   input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--celeste); background: white; }
@@ -114,6 +121,7 @@
   table { width: 100%; border-collapse: collapse; }
   thead th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 2px solid var(--border); }
   tbody td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  #proy-deleg-list td { color: white; font-size: 30px; font-weight: 600; padding: 16px 14px; border-bottom-color: rgba(255,255,255,0.15); }
   tbody tr:hover { background: var(--bg); }
   .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--celeste-bg); color: var(--celeste); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; margin-right: 10px; flex-shrink: 0; }
   .invitado-cell { display: flex; align-items: center; }
@@ -534,14 +542,14 @@
       <table>
         <thead>
           <tr>
-            <th style="color: rgba(255,255,255,0.6);">N°</th>
-            <th style="color: rgba(255,255,255,0.6);">Nombre del delegado</th>
-            <th style="color: rgba(255,255,255,0.6);">Zona</th>
+            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">N°</th>
+            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">Nombre del delegado</th>
+            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">Zona</th>
           </tr>
         </thead>
-        <tbody id="proy-deleg-list" style="color: white; font-size: 18px;"></tbody>
+        <tbody id="proy-deleg-list"></tbody>
       </table>
-      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6);">Todavía no se ha elegido a nadie</div>
+      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px;">Todavía no se ha elegido a nadie</div>
     </div>
   </div>
 </div>
