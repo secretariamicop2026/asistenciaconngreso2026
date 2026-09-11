@@ -1105,7 +1105,9 @@ function buildNewRows(rows) {
     if (sexoRaw === 'm' || sexoRaw === 'masculino') sexo = 'M';
     else if (sexoRaw === 'f' || sexoRaw === 'femenino') sexo = 'F';
     else sexo = guessSexo(nombre);
-    const zona = (r.zona === undefined || r.zona === null) ? '' : String(r.zona).trim();
+    const zonaTexto = (r.zona === undefined || r.zona === null) ? '' : String(r.zona).trim();
+    const zonaEncontrada = zonaTexto.match(/[1-7]/); // acepta "7", "ZONA 7", "Zona 7", "zona7", etc.
+    const zona = zonaEncontrada ? zonaEncontrada[0] : '';
     if (!dni || !nombre) { skipped++; return; }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
