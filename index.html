@@ -402,11 +402,11 @@
         <button onclick="openAddModal()">+ Agregar persona</button>
       </div>
       <input type="file" id="excel-input" class="file-hidden" accept=".xlsx,.xls,.csv" onchange="loadExcel(event)" />
-      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, y opcionalmente <code>sexo</code> (M/F) — con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
+      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, <code>zona</code> (1 al 7) y <code>sexo</code> (M/F o Masculino/Femenino) — todas opcionales excepto nombre y dni, con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
       <p class="muted" id="excel-status"></p>
     </div>
     <div class="card">
-      <p class="muted" style="margin-top:0;">O pega la lista a mano, una persona por línea, formato: <code>DNI,Nombre,Apellidos,Sexo</code> (Sexo es opcional)</p>
+      <p class="muted" style="margin-top:0;">O pega la lista a mano, una persona por línea, formato: <code>DNI,Nombre,Apellidos,Sexo,Zona</code> (Apellidos, Sexo y Zona son opcionales)</p>
       <textarea id="bulk-input" placeholder="12345678,Juan,Perez Diaz,M
 87654321,Maria,Lopez Rios,F"></textarea>
       <div style="margin-top:10px; display:flex; gap:8px;">
@@ -1283,7 +1283,10 @@ function printCredentials() {
 
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return;
-  const ws = XLSX.utils.json_to_sheet([{ nombre: 'Juan', apellidos: 'Perez Diaz', dni: '12345678', sexo: 'M' }]);
+  const ws = XLSX.utils.json_to_sheet([
+    { nombre: 'Juan', apellidos: 'Perez Diaz', dni: '12345678', zona: '1', sexo: 'M' },
+    { nombre: 'Maria', apellidos: 'Lopez Rios', dni: '87654321', zona: '3', sexo: 'F' }
+  ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
   XLSX.writeFile(wb, 'plantilla_invitados.xlsx');
