@@ -863,7 +863,7 @@ function setFilter(filter) {
 
 function renderTable() {
   const q = normalize(document.getElementById('search').value);
-  let rows = attendees.slice().sort((a, b) => fullName(a).localeCompare(fullName(b)));
+  let rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
   if (q) {
     rows = rows
@@ -1129,9 +1129,29 @@ async function loadBulk() {
     statusEl.textContent = 'Pega al menos una línea con DNI y nombre.';
     return;
   }
-  const rows = lines.map(line => {
+
+  // Detecta si la primera línea es un encabezado (ej. pegado directo desde Excel:
+  // "N°,Nombre,Zona,DNI,Sexo") y en ese caso mapea las columnas por nombre,
+  // en vez de asumir el orden fijo DNI,Nombre,Apellidos,Sexo,Zona.
+  const primeraPartes = lines[0].split(',').map(p => normalize(p));
+  const esEncabezado = primeraPartes.some(c => ['dni','nombre','apellidos','sexo','zona'].includes(c));
+  let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3, zona: 4 };
+  let dataLines = lines;
+  if (esEncabezado) {
+    headerIdx = {};
+    primeraPartes.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo','zona'].includes(c)) headerIdx[c] = idx; });
+    dataLines = lines.slice(1);
+  }
+
+  const rows = dataLines.map(line => {
     const parts = line.split(',').map(p => p.trim());
-    return { dni: parts[0], nombre: parts[1], apellidos: parts[2], sexo: parts[3], zona: parts[4] };
+    return {
+      dni: headerIdx.dni !== undefined ? parts[headerIdx.dni] : (esEncabezado ? '' : parts[0]),
+      nombre: headerIdx.nombre !== undefined ? parts[headerIdx.nombre] : (esEncabezado ? '' : parts[1]),
+      apellidos: headerIdx.apellidos !== undefined ? parts[headerIdx.apellidos] : (esEncabezado ? '' : parts[2]),
+      sexo: headerIdx.sexo !== undefined ? parts[headerIdx.sexo] : (esEncabezado ? '' : parts[3]),
+      zona: headerIdx.zona !== undefined ? parts[headerIdx.zona] : (esEncabezado ? '' : parts[4])
+    };
   });
   const { newRows, skipped, updated } = buildNewRows(rows);
   statusEl.textContent = 'Guardando...';
@@ -1165,18 +1185,21 @@ function loadExcel(event) {
       let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3, zona: 4 };
       let startRow = 0;
       const firstRow = rawRows[0].map(c => normalize(c));
-      if (firstRow.some(c => ['dni','nombre','apellidos','sexo','zona'].includes(c))) {
+      const conEncabezado = firstRow.some(c => ['dni','nombre','apellidos','sexo','zona'].includes(c));
+      if (conEncabezado) {
         startRow = 1;
         headerIdx = {};
         firstRow.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo','zona'].includes(c)) headerIdx[c] = idx; });
       }
+      // Con encabezado: una columna no encontrada (ej. "apellidos" si no existe) se deja vacía,
+      // en vez de adivinar una posición fija que podría corresponder a otra columna real.
 
       const rows = rawRows.slice(startRow).map(r => ({
-        dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : r[0],
-        nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : r[1],
-        apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : r[2],
-        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : r[3],
-        zona: headerIdx.zona !== undefined ? r[headerIdx.zona] : r[4]
+        dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : (conEncabezado ? '' : r[0]),
+        nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : (conEncabezado ? '' : r[1]),
+        apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : (conEncabezado ? '' : r[2]),
+        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : (conEncabezado ? '' : r[3]),
+        zona: headerIdx.zona !== undefined ? r[headerIdx.zona] : (conEncabezado ? '' : r[4])
       }));
 
       const { newRows, skipped, updated } = buildNewRows(rows);
