@@ -304,6 +304,7 @@
     <div class="nav-group">
       <div class="nav-pill rojo">DELEGADOS</div>
       <div class="nav-item" onclick="switchTab('delegados'); closeMobileMenu()">🗳️ Elegir delegados</div>
+      <div class="nav-item" onclick="switchTab('proy-delegados'); closeMobileMenu()">📊 Delegados (proyectar)</div>
     </div>
   </div>
 
@@ -514,6 +515,37 @@
   </div>
 </div>
 
+<div class="proy-screen" id="proy-deleg-screen">
+  <button class="proy-back" onclick="switchTab('delegados')">← Volver a delegados</button>
+  <div class="proy-top">
+    <div class="proy-brand">CONGRESO <span>2026</span></div>
+    <div class="proy-brand-sub">Misión Centro-Oeste del Perú · Lista de delegados en vivo</div>
+    <div class="proy-clock" id="proy-deleg-clock">--:--:--</div>
+    <div class="proy-live"><span class="live-dot"></span>En vivo</div>
+  </div>
+
+  <div class="quorum-block verde" style="margin-bottom: 20px;">
+    <div class="quorum-label">Delegados elegidos</div>
+    <div class="quorum-num" id="proy-deleg-total">0</div>
+  </div>
+
+  <div class="card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15);">
+    <div class="table-wrap" style="max-height: none;">
+      <table>
+        <thead>
+          <tr>
+            <th style="color: rgba(255,255,255,0.6);">N°</th>
+            <th style="color: rgba(255,255,255,0.6);">Nombre del delegado</th>
+            <th style="color: rgba(255,255,255,0.6);">Zona</th>
+          </tr>
+        </thead>
+        <tbody id="proy-deleg-list" style="color: white; font-size: 18px;"></tbody>
+      </table>
+      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6);">Todavía no se ha elegido a nadie</div>
+    </div>
+  </div>
+</div>
+
 
 <div class="modal-overlay" id="add-modal-overlay">
   <div class="modal">
@@ -636,6 +668,7 @@ onSnapshot(asistentesCol, (snapshot) => {
   renderProyeccion();
   renderDelegSearch();
   renderDelegList();
+  renderProyDelegados();
   document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>En vivo · ' + new Date().toLocaleTimeString();
 }, (err) => {
   showError('⚠️ No se pudo conectar a la base de datos. Revisa tu conexión. Detalle: ' + (err && err.message ? err.message : err));
@@ -727,6 +760,7 @@ function closeMobileMenu() {
 
 function switchTab(tab) {
   document.getElementById('proy-screen').classList.toggle('open', tab === 'proyeccion');
+  document.getElementById('proy-deleg-screen').classList.toggle('open', tab === 'proy-delegados');
   document.getElementById('header-stats').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
@@ -735,6 +769,7 @@ function switchTab(tab) {
   if (tab === 'registro') renderTable();
   if (tab === 'proyeccion') renderProyeccion();
   if (tab === 'delegados') { renderDelegSearch(); renderDelegList(); }
+  if (tab === 'proy-delegados') renderProyDelegados();
 }
 
 function renderProyeccion() {
@@ -846,6 +881,33 @@ function renderDelegList() {
   emptyEl.style.display = 'none';
   listEl.innerHTML = delegados.map((a, i) => `
     <tr onclick="toggleDelegado('${a.dni}')" style="cursor:pointer;" title="Tocar para quitar">
+      <td><span class="num-badge">${i + 1}</span></td>
+      <td>${escapeHtml(fullName(a))}</td>
+      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderProyDelegados() {
+  const delegados = attendees.filter(a => a.delegado).sort((a, b) => {
+    const za = String(a.zona || 'zzz');
+    const zb = String(b.zona || 'zzz');
+    if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
+    return fullName(a).localeCompare(fullName(b));
+  });
+  const totalEl = document.getElementById('proy-deleg-total');
+  const listEl = document.getElementById('proy-deleg-list');
+  const emptyEl = document.getElementById('proy-deleg-empty');
+  if (!totalEl) return;
+  totalEl.textContent = delegados.length;
+  if (delegados.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = delegados.map((a, i) => `
+    <tr>
       <td><span class="num-badge">${i + 1}</span></td>
       <td>${escapeHtml(fullName(a))}</td>
       <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
@@ -1333,10 +1395,12 @@ function escapeHtml(s) {
 function startClock() {
   const el = document.getElementById('live-clock');
   const proyEl = document.getElementById('proy-clock');
+  const proyDelegEl = document.getElementById('proy-deleg-clock');
   const tick = () => {
     const t = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     el.textContent = t;
     if (proyEl) proyEl.textContent = t;
+    if (proyDelegEl) proyDelegEl.textContent = t;
   };
   tick();
   setInterval(tick, 1000);
