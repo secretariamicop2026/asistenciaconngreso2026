@@ -121,6 +121,10 @@
   table { width: 100%; border-collapse: collapse; }
   thead th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 8px 10px; border-bottom: 2px solid var(--border); }
   tbody td { padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  .com-chip { background:#fff; border:2px solid var(--border); border-radius:999px; padding:8px 16px; font-size:14px; font-weight:700; cursor:pointer; color:var(--text-muted); }
+  .com-chip.active { color:#fff; }
+  .com-banner { border-radius:14px; padding:14px 18px; margin-bottom:12px; color:#fff; font-size:20px; font-weight:800; letter-spacing:.3px; }
+  .com-proy-btn { margin-bottom:12px; background:var(--navy,#0b1c33); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; }
   #proy-deleg-list td { color: white; font-size: 30px; font-weight: 600; padding: 16px 14px; border-bottom-color: rgba(255,255,255,0.15); }
   tbody tr:hover { background: var(--bg); }
   .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--celeste-bg); color: var(--celeste); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; margin-right: 10px; flex-shrink: 0; }
@@ -310,9 +314,17 @@
     </div>
 
     <div class="nav-group">
-      <div class="nav-pill rojo">DELEGADOS</div>
-      <div class="nav-item" onclick="switchTab('delegados'); closeMobileMenu()">🗳️ Elegir delegados</div>
-      <div class="nav-item" onclick="switchTab('proy-delegados'); closeMobileMenu()">📊 Delegados (proyectar)</div>
+      <div class="nav-pill rojo">ELEGIR DELEGADOS</div>
+      <div class="nav-item" onclick="abrirComision('org'); closeMobileMenu()">🔹 Comisión Organizadora</div>
+      <div class="nav-item" onclick="abrirComision('nom'); closeMobileMenu()">🔸 Comisión de Nombramientos</div>
+      <div class="nav-item" onclick="abrirComision('pla'); closeMobileMenu()">🟢 Comisión de Planes</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-pill verde">PROYECTAR DELEGADOS</div>
+      <div class="nav-item" onclick="proyectarComision('org'); closeMobileMenu()">📊 Organizadora</div>
+      <div class="nav-item" onclick="proyectarComision('nom'); closeMobileMenu()">📊 Nombramientos</div>
+      <div class="nav-item" onclick="proyectarComision('pla'); closeMobileMenu()">📊 Planes</div>
     </div>
   </div>
 
@@ -445,9 +457,16 @@
   <div id="view-delegados" style="display:none;">
     <div class="topbar">
       <div>
-        <div class="topbar-title">Lista de delegados</div>
+        <div class="topbar-title" id="deleg-titulo">Lista de delegados</div>
       </div>
     </div>
+
+    <div id="com-chips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+      <button class="com-chip" id="comchip-org" onclick="abrirComision('org')">Organizadora</button>
+      <button class="com-chip" id="comchip-nom" onclick="abrirComision('nom')">Nombramientos</button>
+      <button class="com-chip" id="comchip-pla" onclick="abrirComision('pla')">Planes</button>
+    </div>
+    <div id="deleg-banner" class="com-banner"></div>
 
     <div class="card">
       <div class="search-row">
@@ -469,10 +488,11 @@
     </div>
 
     <div class="card">
+      <button id="btn-proy-com" class="com-proy-btn" onclick="proyectarComision()">📊 Proyectar esta lista</button>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>N°</th><th>Nombre del delegado</th><th>Zona</th></tr>
+            <tr><th>N°</th><th id="deleg-th-nombre">Nombre del delegado</th><th>Zona</th></tr>
           </thead>
           <tbody id="deleg-list"></tbody>
         </table>
@@ -524,16 +544,16 @@
 </div>
 
 <div class="proy-screen" id="proy-deleg-screen">
-  <button class="proy-back" onclick="switchTab('delegados')">← Volver a delegados</button>
+  <button class="proy-back" onclick="abrirComision()">← Volver a elegir</button>
   <div class="proy-top">
     <div class="proy-brand">CONGRESO <span>2026</span></div>
-    <div class="proy-brand-sub">Misión Centro-Oeste del Perú · Lista de delegados en vivo</div>
+    <div class="proy-brand-sub" id="proy-deleg-sub">Misión Centro-Oeste del Perú · Lista de delegados en vivo</div>
     <div class="proy-clock" id="proy-deleg-clock">--:--:--</div>
     <div class="proy-live"><span class="live-dot"></span>En vivo</div>
   </div>
 
-  <div class="quorum-block verde" style="margin-bottom: 20px;">
-    <div class="quorum-label">Delegados elegidos</div>
+  <div class="quorum-block verde" id="proy-deleg-block" style="margin-bottom: 20px;">
+    <div class="quorum-label" id="proy-deleg-label">Delegados elegidos</div>
     <div class="quorum-num" id="proy-deleg-total">0</div>
   </div>
 
@@ -824,7 +844,46 @@ function renderProyeccion() {
   }
 }
 
+const COMISIONES = {
+  org: { campo: 'del_org', nombre: 'Comisión Organizadora',   corto: 'Organizadora',   color: '#0ea5e9' },
+  nom: { campo: 'del_nom', nombre: 'Comisión de Nombramientos', corto: 'Nombramientos', color: '#d97706' },
+  pla: { campo: 'del_pla', nombre: 'Comisión de Planes',       corto: 'Planes',         color: '#16a34a' }
+};
+let comActual = 'org';
+
+function esDelegado(a, key) { return !!a[COMISIONES[key || comActual].campo]; }
+
+function abrirComision(key) {
+  if (key) comActual = key;
+  switchTab('delegados');
+}
+function proyectarComision(key) {
+  if (key) comActual = key;
+  switchTab('proy-delegados');
+}
+
+function renderComisionHeader() {
+  const c = COMISIONES[comActual];
+  const banner = document.getElementById('deleg-banner');
+  if (banner) { banner.style.background = c.color; banner.textContent = '🗳️ Eligiendo delegados: ' + c.nombre.toUpperCase(); }
+  const titulo = document.getElementById('deleg-titulo');
+  if (titulo) titulo.textContent = 'Delegados · ' + c.nombre;
+  const th = document.getElementById('deleg-th-nombre');
+  if (th) th.textContent = 'Delegado de ' + c.corto;
+  Object.keys(COMISIONES).forEach(k => {
+    const chip = document.getElementById('comchip-' + k);
+    if (!chip) return;
+    const act = k === comActual;
+    chip.classList.toggle('active', act);
+    chip.style.background = act ? COMISIONES[k].color : '#fff';
+    chip.style.borderColor = COMISIONES[k].color;
+    chip.style.color = act ? '#fff' : COMISIONES[k].color;
+  });
+}
+
 function renderDelegSearch() {
+  renderComisionHeader();
+  const c = COMISIONES[comActual];
   const q = normalize(document.getElementById('deleg-search').value);
   const zonaSel = document.getElementById('deleg-zona-select').value;
   const resultsEl = document.getElementById('deleg-results');
@@ -837,7 +896,7 @@ function renderDelegSearch() {
   }
 
   if (!zonaSel && !q) {
-    resultsEl.innerHTML = '<div class="empty">Elige una zona y/o escribe un nombre para buscar</div>';
+    resultsEl.innerHTML = '<div class="empty">Elige una zona y/o escribe un nombre o DNI para buscar</div>';
     return;
   }
 
@@ -854,9 +913,9 @@ function renderDelegSearch() {
         <div class="result-name">${escapeHtml(fullName(a))} ${a.zona ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
         <div class="result-dni">DNI ${escapeHtml(a.dni)}</div>
       </div>
-      ${a.delegado
-        ? `<span class="badge-in">✓ Ya es delegado</span>`
-        : `<button class="btn-checkin" style="background: var(--rojo); border-color: var(--rojo);" onclick="toggleDelegado('${a.dni}')">Marcar como delegado</button>`}
+      ${esDelegado(a)
+        ? `<button class="btn-checkin" style="background:#fff; color:${c.color}; border:2px solid ${c.color};" onclick="toggleDelegado('${a.dni}')">✓ Delegado de ${c.corto} (quitar)</button>`
+        : `<button class="btn-checkin" style="background:${c.color}; border-color:${c.color};" onclick="toggleDelegado('${a.dni}')">Marcar en ${c.corto}</button>`}
     </div>
   `).join('');
 }
@@ -864,21 +923,27 @@ function renderDelegSearch() {
 async function toggleDelegado(dni) {
   const person = attendees.find(a => a.dni === dni);
   if (!person) return;
+  const campo = COMISIONES[comActual].campo;
   try {
-    await setDoc(doc(asistentesCol, dni), { delegado: !person.delegado }, { merge: true });
+    await setDoc(doc(asistentesCol, dni), { [campo]: !person[campo] }, { merge: true });
     renderDelegSearch();
   } catch (e) {
     showError('⚠️ No se pudo actualizar. ' + (e && e.message ? e.message : e));
   }
 }
 
-function renderDelegList() {
-  const delegados = attendees.filter(a => a.delegado).sort((a, b) => {
+function delegadosDe(key) {
+  return attendees.filter(a => esDelegado(a, key)).sort((a, b) => {
     const za = String(a.zona || 'zzz');
     const zb = String(b.zona || 'zzz');
     if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
     return fullName(a).localeCompare(fullName(b));
   });
+}
+
+function renderDelegList() {
+  renderComisionHeader();
+  const delegados = delegadosDe(comActual);
   const listEl = document.getElementById('deleg-list');
   const emptyEl = document.getElementById('deleg-list-empty');
   if (delegados.length === 0) {
@@ -897,16 +962,18 @@ function renderDelegList() {
 }
 
 function renderProyDelegados() {
-  const delegados = attendees.filter(a => a.delegado).sort((a, b) => {
-    const za = String(a.zona || 'zzz');
-    const zb = String(b.zona || 'zzz');
-    if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
-    return fullName(a).localeCompare(fullName(b));
-  });
+  const c = COMISIONES[comActual];
+  const delegados = delegadosDe(comActual);
   const totalEl = document.getElementById('proy-deleg-total');
   const listEl = document.getElementById('proy-deleg-list');
   const emptyEl = document.getElementById('proy-deleg-empty');
   if (!totalEl) return;
+  const sub = document.getElementById('proy-deleg-sub');
+  if (sub) sub.textContent = 'Misión Centro-Oeste del Perú · ' + c.nombre;
+  const lbl = document.getElementById('proy-deleg-label');
+  if (lbl) lbl.textContent = 'Delegados · ' + c.nombre;
+  const blk = document.getElementById('proy-deleg-block');
+  if (blk) { blk.style.background = c.color; blk.style.borderColor = c.color; }
   totalEl.textContent = delegados.length;
   if (delegados.length === 0) {
     listEl.innerHTML = '';
@@ -1120,7 +1187,7 @@ async function saveModalPerson() {
   try {
     const esNuevo = !attendees.some(a => a.dni === dni);
     const data = { nombre, apellidos, sexo, zona };
-    if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); data.delegado = false; }
+    if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); data.del_org = false; data.del_nom = false; data.del_pla = false; }
     await setDoc(doc(asistentesCol, dni), data, { merge: true });
     document.getElementById('modal-nombre').value = '';
     document.getElementById('modal-apellidos').value = '';
@@ -1142,7 +1209,7 @@ async function saveNewRows(rows) {
       // había marcado su llegada (llego/hora), esos datos NO se tocan ni se pierden.
       const data = { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '', zona: r.zona || '' };
       if (r.numero) data.numero = r.numero; // solo se asigna número a los nuevos
-      if (r.hasOwnProperty('delegado')) data.delegado = r.delegado;
+      if (r.numero) { data.del_org = false; data.del_nom = false; data.del_pla = false; } // solo a los nuevos
       batch.set(doc(asistentesCol, r.dni), data, { merge: true });
     });
     await batch.commit();
@@ -1184,7 +1251,7 @@ function buildNewRows(rows) {
     vistosEnEsteArchivo.add(dni);
     const esNuevo = !existentes.has(dni);
     if (esNuevo) {
-      newRows.push({ dni, nombre, apellidos, sexo, zona, numero: siguienteNumero, delegado: false });
+      newRows.push({ dni, nombre, apellidos, sexo, zona, numero: siguienteNumero });
       siguienteNumero++;
     } else {
       updated++;
@@ -1435,6 +1502,8 @@ window.resetAllData = resetAllData;
 window.toggleScanner = toggleScanner;
 window.renderDelegSearch = renderDelegSearch;
 window.toggleDelegado = toggleDelegado;
+window.abrirComision = abrirComision;
+window.proyectarComision = proyectarComision;
 window.printCredentials = printCredentials;
 </script>
 </body>
