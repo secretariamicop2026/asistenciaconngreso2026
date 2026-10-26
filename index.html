@@ -1415,13 +1415,13 @@ function printCredentials() {
     <style>
       * { box-sizing: border-box; }
       body { font-family: -apple-system, sans-serif; margin: 0; padding: 20px; background: #f1f3f6; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-      .card { border: 2px dashed #94a3b8; border-radius: 14px; padding: 14px; text-align: center; background: white; page-break-inside: avoid; }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .card { border: 2px dashed #94a3b8; border-radius: 14px; padding: 16px 12px; text-align: center; background: white; page-break-inside: avoid; break-inside: avoid; }
       .card .brand { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #0b1c33; }
       .card .brand span { color: #0ea5e9; }
       .card .numero { font-size: 12px; color: #64748b; margin: 4px 0; font-weight: 700; }
-      .card .qr { margin: 8px auto; }
-      .card .nombre { font-size: 13px; font-weight: 700; margin-top: 6px; line-height: 1.2; }
+      .card .qr { margin: 0 auto; display: flex; justify-content: center; }
+      .card .nombre { font-size: 17px; font-weight: 800; margin-top: 10px; line-height: 1.25; color: #0b1c33; }
       .card .dni { font-size: 11px; color: #64748b; margin-top: 2px; }
       .toolbar { text-align:center; margin-bottom: 16px; }
       .toolbar button { padding: 10px 20px; font-size: 14px; border-radius: 8px; border: none; background: #0b1c33; color: white; cursor: pointer; }
@@ -1441,15 +1441,12 @@ function printCredentials() {
       const card = win.document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <div class="brand">CONGRESO <span>2026</span></div>
-        <div class="numero">N° ${a.numero || '—'}</div>
         <div class="qr" id="qr-${a.dni}"></div>
-        <div class="nombre">${escapeHtml(fullName(a))}</div>
-        <div class="dni">DNI ${escapeHtml(a.dni)}</div>
+        <div class="nombre">${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) + ' - ' : ''}${escapeHtml(fullName(a))}</div>
       `;
       grid.appendChild(card);
       new win.QRCode(win.document.getElementById('qr-' + a.dni), {
-        text: a.dni, width: 110, height: 110
+        text: a.dni, width: 220, height: 220
       });
     });
     statusEl.textContent = `Listo, se generaron ${rows.length} credenciales en la nueva pestaña.`;
