@@ -473,6 +473,7 @@
         <input type="text" id="deleg-search" placeholder="Escribe el nombre de la persona..." oninput="renderDelegSearch()" autocomplete="off" />
         <select id="deleg-zona-select" onchange="renderDelegSearch()" style="max-width: 160px; flex-shrink: 0;">
           <option value="">Todas las zonas</option>
+          <option value="0">Zona 0</option>
           <option value="1">Zona 1</option>
           <option value="2">Zona 2</option>
           <option value="3">Zona 3</option>
@@ -605,7 +606,8 @@
       <label class="field-label">Zona</label>
       <select id="modal-zona">
         <option value="">Sin zona</option>
-        <option value="1">Zona 1</option>
+        <option value="0">Zona 0</option>
+          <option value="1">Zona 1</option>
         <option value="2">Zona 2</option>
         <option value="3">Zona 3</option>
         <option value="4">Zona 4</option>
@@ -651,6 +653,8 @@ let quorumMeta = 0;
 let scanning = false;
 let scannerInstance = null;
 let lastScan = { text: '', time: 0 };
+
+function tieneZona(a) { return a.zona !== undefined && a.zona !== null && String(a.zona).trim() !== ''; }
 
 function normalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -889,7 +893,7 @@ function renderDelegSearch() {
   const resultsEl = document.getElementById('deleg-results');
 
   let candidatos = attendees.slice();
-  if (zonaSel) candidatos = candidatos.filter(a => String(a.zona || '') === zonaSel);
+  if (zonaSel) candidatos = candidatos.filter(a => String(a.zona ?? '') === zonaSel);
 
   if (q) {
     candidatos = candidatos.filter(a => normalize(fullName(a)).includes(q) || normalize(a.dni).includes(q));
@@ -910,7 +914,7 @@ function renderDelegSearch() {
   resultsEl.innerHTML = candidatos.map(a => `
     <div class="result">
       <div>
-        <div class="result-name">${escapeHtml(fullName(a))} ${a.zona ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
+        <div class="result-name">${escapeHtml(fullName(a))} ${tieneZona(a) ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
         <div class="result-dni">DNI ${escapeHtml(a.dni)}</div>
       </div>
       ${esDelegado(a)
@@ -934,8 +938,8 @@ async function toggleDelegado(dni) {
 
 function delegadosDe(key) {
   return attendees.filter(a => esDelegado(a, key)).sort((a, b) => {
-    const za = String(a.zona || 'zzz');
-    const zb = String(b.zona || 'zzz');
+    const za = (tieneZona(a) ? String(a.zona) : 'zzz');
+    const zb = (tieneZona(b) ? String(b.zona) : 'zzz');
     if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
     return fullName(a).localeCompare(fullName(b));
   });
@@ -956,7 +960,7 @@ function renderDelegList() {
     <tr onclick="toggleDelegado('${a.dni}')" style="cursor:pointer;" title="Tocar para quitar">
       <td><span class="num-badge">${i + 1}</span></td>
       <td>${escapeHtml(fullName(a))}</td>
-      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+      <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
     </tr>
   `).join('');
 }
@@ -985,7 +989,7 @@ function renderProyDelegados() {
     <tr>
       <td><span class="num-badge">${i + 1}</span></td>
       <td>${escapeHtml(fullName(a))}</td>
-      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+      <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
     </tr>
   `).join('');
 }
@@ -1045,7 +1049,7 @@ function renderTable() {
         </div>
       </td>
       <td>${escapeHtml(a.dni)}</td>
-      <td>${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+      <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
       <td><span class="sexo-tag" title="Click para corregir" onclick="cycleSexo('${a.dni}')">${a.sexo === 'M' ? '♂ M' : a.sexo === 'F' ? '♀ F' : '— '}</span></td>
       <td>${a.llego
         ? '<span class="badge presente"><span class="badge-dot"></span>Presente</span>'
@@ -1236,7 +1240,7 @@ function parseZona(v) {
   const t = String(v).toUpperCase().replace(/[\u00a0\u202f\u200b]/g, ' ').trim();
   const rom = t.match(/\b(VII|VI|IV|V|III|II|I)\b/);
   if (rom) return String({ I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7 }[rom[1]]);
-  const num = t.match(/[1-7]/);
+  const num = t.match(/[0-7]/);
   return num ? num[0] : '';
 }
 
@@ -1442,7 +1446,7 @@ function printCredentials() {
       card.className = 'card';
       card.innerHTML = `
         <div class="qr" id="qr-${a.dni}"></div>
-        <div class="nombre">${a.zona ? 'Zona ' + escapeHtml(String(a.zona)) + ' - ' : ''}${escapeHtml(fullName(a))}</div>
+        <div class="nombre">${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) + ' - ' : ''}${escapeHtml(fullName(a))}</div>
       `;
       grid.appendChild(card);
       new win.QRCode(win.document.getElementById('qr-' + a.dni), {
@@ -1481,7 +1485,7 @@ function exportExcel() {
       DNI: a.dni,
       Nombre: a.nombre,
       Apellidos: a.apellidos || '',
-      Zona: a.zona || '',
+      Zona: tieneZona(a) ? a.zona : '',
       Sexo: a.sexo || '',
       Estado: a.llego ? 'Presente' : 'Pendiente',
       Hora: a.hora || ''
