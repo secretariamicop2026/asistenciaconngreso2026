@@ -657,6 +657,12 @@ let lastScan = { text: '', time: 0 };
 function dniLabel(a) { return String(a.dni).startsWith('SD-') ? 'Sin DNI' : a.dni; }
 function tieneZona(a) { return a.zona !== undefined && a.zona !== null && String(a.zona).trim() !== ''; }
 
+// Para buscar: ignora tildes, mayúsculas, espacios dobles y confusiones comunes de escritura
+// (v/b, h muda, ll/y), así "Montalbán" encuentra a "Montalvan".
+function buscable(s) {
+  return normalize(s).replace(/ll/g, 'y').replace(/v/g, 'b').replace(/h/g, '').replace(/\s+/g, ' ');
+}
+
 function normalize(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
@@ -889,7 +895,7 @@ function renderComisionHeader() {
 function renderDelegSearch() {
   renderComisionHeader();
   const c = COMISIONES[comActual];
-  const q = normalize(document.getElementById('deleg-search').value);
+  const q = buscable(document.getElementById('deleg-search').value);
   const zonaSel = document.getElementById('deleg-zona-select').value;
   const resultsEl = document.getElementById('deleg-results');
 
@@ -897,7 +903,11 @@ function renderDelegSearch() {
   if (zonaSel) candidatos = candidatos.filter(a => String(a.zona ?? '') === zonaSel);
 
   if (q) {
-    candidatos = candidatos.filter(a => normalize(fullName(a)).includes(q) || normalize(a.dni).includes(q));
+    const palabras = q.split(' ').filter(Boolean);
+    candidatos = candidatos.filter(a => {
+      const nom = buscable(fullName(a));
+      return palabras.every(w => nom.includes(w)) || normalize(a.dni).includes(q);
+    });
   }
 
   if (!zonaSel && !q) {
@@ -905,7 +915,7 @@ function renderDelegSearch() {
     return;
   }
 
-  candidatos = candidatos.sort((a, b) => fullName(a).localeCompare(fullName(b))).slice(0, 20);
+  candidatos = candidatos.sort((a, b) => fullName(a).localeCompare(fullName(b))).slice(0, 300);
 
   if (candidatos.length === 0) {
     resultsEl.innerHTML = '<div class="empty">No se encontró a nadie con ese filtro</div>';
@@ -1004,14 +1014,14 @@ function setFilter(filter) {
 }
 
 function renderTable() {
-  const q = normalize(document.getElementById('search').value);
+  const q = buscable(document.getElementById('search').value);
   let rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
   if (q) {
     rows = rows
       .map(a => {
         const dni = normalize(a.dni);
-        const nombre = normalize(fullName(a));
+        const nombre = buscable(fullName(a));
         let score = -1;
         if (dni.startsWith(q)) score = 0;
         else if (nombre.startsWith(q)) score = 1;
