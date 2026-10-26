@@ -423,7 +423,7 @@
         <button onclick="openAddModal()">+ Agregar persona</button>
       </div>
       <input type="file" id="excel-input" class="file-hidden" accept=".xlsx,.xls,.csv" onchange="loadExcel(event)" />
-      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, <code>zona</code> (1 al 7) y <code>sexo</code> (M/F o Masculino/Femenino) — todas opcionales excepto nombre y dni, con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
+      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, <code>zona</code> (0 al 7) y <code>sexo</code> (M/F o Masculino/Femenino) — todas opcionales excepto nombre y dni, con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
       <p class="muted" id="excel-status"></p>
     </div>
     <div class="card">
@@ -654,6 +654,7 @@ let scanning = false;
 let scannerInstance = null;
 let lastScan = { text: '', time: 0 };
 
+function dniLabel(a) { return String(a.dni).startsWith('SD-') ? 'Sin DNI' : a.dni; }
 function tieneZona(a) { return a.zona !== undefined && a.zona !== null && String(a.zona).trim() !== ''; }
 
 function normalize(s) {
@@ -915,7 +916,7 @@ function renderDelegSearch() {
     <div class="result">
       <div>
         <div class="result-name">${escapeHtml(fullName(a))} ${tieneZona(a) ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
-        <div class="result-dni">DNI ${escapeHtml(a.dni)}</div>
+        <div class="result-dni">${String(a.dni).startsWith('SD-') ? 'Sin DNI' : 'DNI ' + escapeHtml(a.dni)}</div>
       </div>
       ${esDelegado(a)
         ? `<button class="btn-checkin" style="background:#fff; color:${c.color}; border:2px solid ${c.color};" onclick="toggleDelegado('${a.dni}')">✓ Delegado de ${c.corto} (quitar)</button>`
@@ -1048,7 +1049,7 @@ function renderTable() {
           </div>
         </div>
       </td>
-      <td>${escapeHtml(a.dni)}</td>
+      <td>${escapeHtml(dniLabel(a))}</td>
       <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
       <td><span class="sexo-tag" title="Click para corregir" onclick="cycleSexo('${a.dni}')">${a.sexo === 'M' ? '♂ M' : a.sexo === 'F' ? '♀ F' : '— '}</span></td>
       <td>${a.llego
@@ -1258,7 +1259,7 @@ function buildNewRows(rows) {
   const newRows = [];
   let siguienteNumero = nextNumero();
   rows.forEach(r => {
-    const dni = limpiarDni(r.dni);
+    let dni = limpiarDni(r.dni);
     const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).replace(/[\u00a0\u202f\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
     const apellidos = (r.apellidos === undefined || r.apellidos === null) ? '' : String(r.apellidos).trim();
     const sexoRaw = normalize(r.sexo);
@@ -1267,7 +1268,15 @@ function buildNewRows(rows) {
     else if (/^(f|femenino|mujer|dama)$/.test(sexoRaw.replace(/\./g, '').trim())) sexo = 'F';
     else sexo = guessSexo(nombre);
     const zona = parseZona(r.zona);
-    if (!dni || !nombre) { skipped++; return; }
+    if (!nombre) { skipped++; return; }
+    // Sin DNI: se les crea un código interno fijo (SD-xxxx) a partir del nombre, para que igual
+    // entren a la lista, se puedan elegir como delegados y tengan QR. Si se vuelve a importar la
+    // misma persona, recibe el mismo código y no se duplica.
+    if (!dni) {
+      const base = normalize(nombre + ' ' + apellidos).replace(/[^a-z0-9]/g, '');
+      let h = 5381; for (let k = 0; k < base.length; k++) h = ((h * 33) ^ base.charCodeAt(k)) >>> 0;
+      dni = 'SD-' + h.toString(36).toUpperCase();
+    }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
     const esNuevo = !existentes.has(dni);
@@ -1482,7 +1491,7 @@ function exportExcel() {
     .slice()
     .sort((a, b) => fullName(a).localeCompare(fullName(b)))
     .map(a => ({
-      DNI: a.dni,
+      DNI: String(a.dni).startsWith('SD-') ? '' : a.dni,
       Nombre: a.nombre,
       Apellidos: a.apellidos || '',
       Zona: tieneZona(a) ? a.zona : '',
