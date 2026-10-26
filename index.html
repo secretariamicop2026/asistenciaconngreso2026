@@ -1221,6 +1221,25 @@ function nextNumero() {
   return max + 1;
 }
 
+// Deja solo los dígitos del DNI (quita espacios raros, *, ., :, textos como "(Carne Extranjería)").
+// Una letra O se toma como cero. Si Excel se comió el cero inicial (7 dígitos), se lo devuelve.
+function limpiarDni(v) {
+  if (v === undefined || v === null) return '';
+  let t = String(v).replace(/\(.*?\)/g, '').replace(/[oO]/g, '0').replace(/\D/g, '');
+  if (t.length >= 6 && t.length < 8) t = t.padStart(8, '0');
+  return t;
+}
+
+// Acepta "7", "ZONA 7", "Zona VII", "ZONA III", etc. → devuelve '1'..'7'
+function parseZona(v) {
+  if (v === undefined || v === null) return '';
+  const t = String(v).toUpperCase().replace(/[\u00a0\u202f\u200b]/g, ' ').trim();
+  const rom = t.match(/\b(VII|VI|IV|V|III|II|I)\b/);
+  if (rom) return String({ I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7 }[rom[1]]);
+  const num = t.match(/[1-7]/);
+  return num ? num[0] : '';
+}
+
 function buildNewRows(rows) {
   // rows: [{dni, nombre, apellidos, sexo}]
   // Ya NO se descartan los DNI repetidos: si la persona ya existe, se actualiza su
@@ -1235,17 +1254,15 @@ function buildNewRows(rows) {
   const newRows = [];
   let siguienteNumero = nextNumero();
   rows.forEach(r => {
-    const dni = (r.dni === undefined || r.dni === null) ? '' : String(r.dni).trim();
-    const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).trim();
+    const dni = limpiarDni(r.dni);
+    const nombre = (r.nombre === undefined || r.nombre === null) ? '' : String(r.nombre).replace(/[\u00a0\u202f\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
     const apellidos = (r.apellidos === undefined || r.apellidos === null) ? '' : String(r.apellidos).trim();
     const sexoRaw = normalize(r.sexo);
     let sexo;
-    if (sexoRaw === 'm' || sexoRaw === 'masculino') sexo = 'M';
-    else if (sexoRaw === 'f' || sexoRaw === 'femenino') sexo = 'F';
+    if (/^(m|masculino|varon|hombre|h)$/.test(sexoRaw.replace(/\./g, '').trim())) sexo = 'M';
+    else if (/^(f|femenino|mujer|dama)$/.test(sexoRaw.replace(/\./g, '').trim())) sexo = 'F';
     else sexo = guessSexo(nombre);
-    const zonaTexto = (r.zona === undefined || r.zona === null) ? '' : String(r.zona).trim();
-    const zonaEncontrada = zonaTexto.match(/[1-7]/); // acepta "7", "ZONA 7", "Zona 7", "zona7", etc.
-    const zona = zonaEncontrada ? zonaEncontrada[0] : '';
+    const zona = parseZona(r.zona);
     if (!dni || !nombre) { skipped++; return; }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
@@ -1322,19 +1339,38 @@ function loadExcel(event) {
       const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       if (!rawRows.length) { statusEl.textContent = 'El archivo está vacío.'; return; }
 
+      const limpiarCab = c => normalize(String(c == null ? '' : c).replace(/[\u00a0\u202f\u200b]/g, ' ')).replace(/\s+/g, ' ');
+      const alias = { dni: ['dni', 'documento', 'nro dni', 'n dni'], nombre: ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'nombres y apellidos'], apellidos: ['apellidos', 'apellido'], sexo: ['sexo', 'genero'], zona: ['zona'], num: ['n', 'no', 'nro', 'numero', 'n°', 'nº', 'n.'] };
+      const campoDe = c => Object.keys(alias).find(k => alias[k].includes(c));
+
       let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3, zona: 4 };
       let startRow = 0;
-      const firstRow = rawRows[0].map(c => normalize(c));
-      const conEncabezado = firstRow.some(c => ['dni','nombre','apellidos','sexo','zona'].includes(c));
-      if (conEncabezado) {
-        startRow = 1;
-        headerIdx = {};
-        firstRow.forEach((c, idx) => { if (['dni','nombre','apellidos','sexo','zona'].includes(c)) headerIdx[c] = idx; });
+      let conEncabezado = false;
+      // Busca la fila de encabezados entre las primeras 15 filas (puede haber un título arriba)
+      for (let i = 0; i < Math.min(15, rawRows.length); i++) {
+        const fila = (rawRows[i] || []).map(limpiarCab);
+        const campos = fila.map(campoDe).filter(Boolean);
+        if (campos.includes('dni') && campos.includes('nombre')) {
+          conEncabezado = true;
+          startRow = i + 1;
+          headerIdx = {};
+          // Solo la primera columna que coincida con cada campo (así "Edad" u otras nunca se confunden con DNI)
+          fila.forEach((c, idx) => { const k = campoDe(c); if (k && headerIdx[k] === undefined) headerIdx[k] = idx; });
+          break;
+        }
       }
-      // Con encabezado: una columna no encontrada (ej. "apellidos" si no existe) se deja vacía,
-      // en vez de adivinar una posición fija que podría corresponder a otra columna real.
+      if (!conEncabezado) {
+        const firstRow = (rawRows[0] || []).map(limpiarCab);
+        if (firstRow.some(c => campoDe(c))) {
+          conEncabezado = true; startRow = 1; headerIdx = {};
+          firstRow.forEach((c, idx) => { const k = campoDe(c); if (k && headerIdx[k] === undefined) headerIdx[k] = idx; });
+        }
+      }
 
-      const rows = rawRows.slice(startRow).map(r => ({
+      // Si el Excel trae columna N° (1, 2, 3...), solo se leen las filas que tengan un número válido:
+      // así se ignoran títulos, encabezados repetidos y filas vacías o de notas.
+      const filasValidas = rawRows.slice(startRow).filter(r => headerIdx.num === undefined || (Number(r[headerIdx.num]) >= 1));
+      const rows = filasValidas.map(r => ({
         dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : (conEncabezado ? '' : r[0]),
         nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : (conEncabezado ? '' : r[1]),
         apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : (conEncabezado ? '' : r[2]),
