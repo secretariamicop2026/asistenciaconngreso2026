@@ -1068,7 +1068,9 @@ function renderTable() {
       <td>${a.hora || '—'}</td>
       <td>${a.llego
         ? `<button class="row-action-btn desmarcar" onclick="toggleCheckIn('${a.dni}')">Desmarcar</button>`
-        : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}</td>
+        : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}
+        <button class="row-action-btn" title="Imprimir solo el QR de esta persona" onclick="printCredentials('${a.dni}')">🖨 QR</button>
+        <button class="row-action-btn desmarcar" title="Eliminar a esta persona de la lista" onclick="deletePerson('${a.dni}')">🗑</button></td>
     </tr>
   `).join('');
 }
@@ -1228,6 +1230,17 @@ async function saveNewRows(rows) {
       batch.set(doc(asistentesCol, r.dni), data, { merge: true });
     });
     await batch.commit();
+  }
+}
+
+async function deletePerson(dni) {
+  const p = attendees.find(a => a.dni === dni);
+  if (!p) return;
+  if (!confirm('¿Eliminar a ' + fullName(p) + ' de la lista?\n\nSu QR dejará de funcionar. Los QR de las demás personas NO cambian.')) return;
+  try {
+    await deleteDoc(doc(asistentesCol, dni));
+  } catch (e) {
+    showError('⚠️ No se pudo eliminar. ' + (e && e.message ? e.message : e));
   }
 }
 
@@ -1413,7 +1426,7 @@ function loadExcel(event) {
   reader.readAsArrayBuffer(file);
 }
 
-function printCredentials() {
+function printCredentials(soloDni) {
   const statusEl = document.getElementById('print-status');
   if (attendees.length === 0) {
     statusEl.textContent = 'No hay invitados cargados todavía.';
@@ -1431,7 +1444,8 @@ function printCredentials() {
     return;
   }
 
-  const rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
+  const rows = attendees.filter(a => !soloDni || a.dni === soloDni).sort((a, b) => (a.numero || 0) - (b.numero || 0));
+  if (rows.length === 0) { statusEl.textContent = 'No se encontró a esa persona.'; return; }
 
   win.document.write(`
     <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Credenciales · Congreso 2026</title>
@@ -1561,6 +1575,7 @@ window.toggleDelegado = toggleDelegado;
 window.abrirComision = abrirComision;
 window.proyectarComision = proyectarComision;
 window.printCredentials = printCredentials;
+window.deletePerson = deletePerson;
 </script>
 </body>
 </html>
