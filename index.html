@@ -104,7 +104,7 @@
   .dni-badge { font-size: 11px; font-weight: 700; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--bg); }
   .result { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex-wrap: nowrap; }
   .result:last-child { border-bottom: none; }
-  .result > div:first-child { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .result > div:first-child { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .result-name { font-weight: 600; font-size: 14px; }
   .result-dni { font-size: 12px; color: var(--text-muted); }
   .result .btn-checkin, .result .badge-in { flex-shrink: 0; }
@@ -127,6 +127,17 @@
   .com-proy-btn { margin-bottom:12px; background:var(--navy,#0b1c33); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; }
   #proy-deleg-list td { color: white; font-size: 30px; font-weight: 600; padding: 16px 14px; border-bottom-color: rgba(255,255,255,0.15); }
   tbody tr:hover { background: var(--bg); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+  .avatar { overflow: hidden; }
+  .avatar.clic { cursor: pointer; }
+  .foto-overlay { position: fixed; inset: 0; background: rgba(11,28,51,.8); display: none; align-items: center; justify-content: center; z-index: 5000; padding: 16px; }
+  .foto-overlay.open { display: flex; }
+  .foto-box { background: #fff; border-radius: 18px; padding: 20px; max-width: 360px; width: 100%; text-align: center; }
+  .foto-box .grande { width: 240px; height: 240px; border-radius: 16px; margin: 0 auto 12px; background: var(--celeste-bg); color: var(--celeste); display: flex; align-items: center; justify-content: center; font-size: 64px; font-weight: 800; overflow: hidden; }
+  .foto-box .grande img { width: 100%; height: 100%; object-fit: cover; }
+  .foto-box .fnombre { font-size: 18px; font-weight: 800; color: #0b1c33; }
+  .foto-box .fzona { color: var(--text-muted); margin-bottom: 14px; }
+  .foto-box .fbtns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--celeste-bg); color: var(--celeste); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; margin-right: 10px; flex-shrink: 0; }
   .invitado-cell { display: flex; align-items: center; }
   .invitado-name { font-weight: 600; font-size: 14px; }
@@ -439,6 +450,16 @@
       <p class="muted" style="margin:0;">Todo se guarda en una base de datos real (Firebase) y se sincroniza en vivo con cualquiera que tenga este mismo link abierto.</p>
     </div>
     <div class="card">
+      <div class="card-eyebrow">FOTOS</div>
+      <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">Subir fotos de los miembros</div>
+      <p class="muted" style="margin-top:0;">Selecciona muchas fotos a la vez. El sistema empareja cada foto por el <b>nombre del archivo</b> (ej. <code>Daniel Montalvan Ruiz.jpg</code>) o por el <b>DNI</b> (ej. <code>70533839.jpg</code>). Si subes una carpeta con subcarpetas llamadas "Zona 1", "Zona 2"…, busca cada foto solo dentro de esa zona. También puedes subir una por una tocando el círculo de la persona en el Registro.</p>
+      <button class="celeste" onclick="document.getElementById('fotos-lote').click()">📷 Subir fotos</button>
+      <button onclick="document.getElementById('fotos-carpeta').click()">📁 Subir carpeta (con subcarpetas por zona)</button>
+      <input type="file" id="fotos-lote" accept="image/*" multiple style="display:none;" onchange="subirFotosLote(event)">
+      <input type="file" id="fotos-carpeta" webkitdirectory multiple style="display:none;" onchange="subirFotosLote(event)">
+      <p class="muted" id="fotos-status" style="margin-top:10px; margin-bottom:0;"></p>
+    </div>
+    <div class="card">
       <div class="card-eyebrow">CREDENCIALES</div>
       <div class="card-title" style="font-size: 18px; margin-bottom: 8px;">Imprimir credenciales con código QR</div>
       <p class="muted" style="margin-top:0;">Genera una hoja lista para imprimir, con el número, nombre y código QR de cada invitado (para recortar y repartir como credencial antes del evento).</p>
@@ -576,6 +597,21 @@
 </div>
 
 
+<div class="foto-overlay" id="foto-overlay" onclick="if(event.target===this)closeFoto()">
+  <div class="foto-box">
+    <div class="grande" id="foto-grande"></div>
+    <div class="fnombre" id="foto-nombre"></div>
+    <div class="fzona" id="foto-zona"></div>
+    <div class="fbtns">
+      <button class="celeste" onclick="document.getElementById('foto-input').click()">📷 Subir / tomar foto</button>
+      <button id="foto-quitar" style="background:#fff;color:var(--rojo);border-color:var(--rojo);" onclick="quitarFoto()">Quitar</button>
+      <button onclick="closeFoto()">Cerrar</button>
+    </div>
+    <p class="muted" id="foto-msg" style="margin:10px 0 0;"></p>
+    <input type="file" id="foto-input" accept="image/*" style="display:none;" onchange="guardarFotoIndividual(event)">
+  </div>
+</div>
+
 <div class="modal-overlay" id="add-modal-overlay">
   <div class="modal">
     <button class="modal-close" onclick="closeAddModal()">✕</button>
@@ -685,6 +721,119 @@ function guessSexo(nombre) {
 function fullName(a) {
   return [a.nombre, a.apellidos].filter(Boolean).join(' ');
 }
+function avatarHtml(a, size, clickable) {
+  const st = 'width:' + size + 'px;height:' + size + 'px;font-size:' + Math.max(11, Math.round(size * 0.36)) + 'px;';
+  const inner = a.foto ? '<img src="' + a.foto + '" alt="">' : escapeHtml(initials(a));
+  return '<div class="avatar' + (clickable ? ' clic' : '') + '" style="' + st + '"' +
+    (clickable ? ' title="Ver / cambiar foto" onclick="openFoto(\'' + a.dni + '\')"' : '') + '>' + inner + '</div>';
+}
+
+// Reduce la foto a 200x200 (recortada al centro) y la devuelve como texto JPEG liviano (~10 KB)
+function reducirFoto(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const T = 200;
+      const c = document.createElement('canvas'); c.width = T; c.height = T;
+      const lado = Math.min(img.width, img.height);
+      const sx = (img.width - lado) / 2, sy = Math.max(0, (img.height - lado) / 3); // un poco hacia arriba: rostros
+      c.getContext('2d').drawImage(img, sx, sy, lado, lado, 0, 0, T, T);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.75));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+    img.src = url;
+  });
+}
+
+let fotoDni = null;
+function openFoto(dni) {
+  const a = attendees.find(x => x.dni === dni);
+  if (!a) return;
+  fotoDni = dni;
+  document.getElementById('foto-grande').innerHTML = a.foto ? '<img src="' + a.foto + '" alt="">' : escapeHtml(initials(a));
+  document.getElementById('foto-nombre').textContent = fullName(a);
+  document.getElementById('foto-zona').textContent = (tieneZona(a) ? 'Zona ' + a.zona : 'Sin zona') + ' · ' + (String(a.dni).startsWith('SD-') ? 'Sin DNI' : 'DNI ' + a.dni);
+  document.getElementById('foto-quitar').style.display = a.foto ? '' : 'none';
+  document.getElementById('foto-msg').textContent = '';
+  document.getElementById('foto-overlay').classList.add('open');
+}
+function closeFoto() { document.getElementById('foto-overlay').classList.remove('open'); fotoDni = null; }
+async function guardarFotoIndividual(ev) {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file || !fotoDni) return;
+  const msg = document.getElementById('foto-msg');
+  try {
+    msg.textContent = 'Guardando foto...';
+    const dataUrl = await reducirFoto(file);
+    await setDoc(doc(asistentesCol, fotoDni), { foto: dataUrl }, { merge: true });
+    msg.textContent = '✓ Foto guardada';
+    const a = attendees.find(x => x.dni === fotoDni);
+    if (a) document.getElementById('foto-grande').innerHTML = '<img src="' + dataUrl + '" alt="">';
+    document.getElementById('foto-quitar').style.display = '';
+  } catch (e) { msg.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+async function quitarFoto() {
+  if (!fotoDni) return;
+  try { await setDoc(doc(asistentesCol, fotoDni), { foto: '' }, { merge: true }); closeFoto(); }
+  catch (e) { document.getElementById('foto-msg').textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+
+// Subida masiva. El sistema empareja cada foto con su persona por el NOMBRE DEL ARCHIVO (o el DNI),
+// ignorando tildes, mayúsculas, b/v, y aceptando nombres incompletos ("Juan Perez" → "Juan Carlos Perez Diaz").
+// Si la foto viene dentro de una carpeta "Zona 3", solo busca entre las personas de esa zona.
+function emparejarFoto(file, porDni) {
+  const base = file.name.replace(/\.[^.]+$/, '');
+  const ruta = (file.webkitRelativePath || '').split('/').slice(0, -1);
+  const zonaCarpeta = ruta.map(seg => /zona|^z[\s_-]*\d|^\d$/i.test(seg.trim()) ? parseZona(seg) : '').find(z => z !== '') || '';
+  const d = porDni.get(limpiarDni(base));
+  if (d && /\d{6,}/.test(base)) return { a: d };
+  let pool = attendees;
+  if (zonaCarpeta !== '') { const z = attendees.filter(x => String(x.zona ?? '') === zonaCarpeta); if (z.length) pool = z; }
+  const tok = t => buscable(t).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(w => w.length > 1 && !/^\d+$/.test(w));
+  const ft = tok(base);
+  if (!ft.length) return { a: null };
+  const conTok = pool.map(x => ({ x, t: tok(fullName(x)) }));
+  const iguales = conTok.filter(o => o.t.length === ft.length && ft.every(w => o.t.includes(w)));
+  if (iguales.length === 1) return { a: iguales[0].x };
+  // El archivo trae menos palabras que el nombre completo
+  let cand = conTok.filter(o => ft.every(w => o.t.includes(w)));
+  // El archivo trae más palabras que el nombre de la lista
+  if (!cand.length) cand = conTok.filter(o => o.t.every(w => ft.includes(w)));
+  if (cand.length === 1) return { a: cand[0].x };
+  if (cand.length > 1) return { a: null, ambigua: true }; // varias personas parecidas: mejor no adivinar
+  return { a: null };
+}
+
+async function subirFotosLote(ev) {
+  const files = Array.from(ev.target.files || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name));
+  ev.target.value = '';
+  const st = document.getElementById('fotos-status');
+  if (!files.length) { st.textContent = 'No se encontraron imágenes.'; return; }
+  const porDni = new Map(attendees.map(a => [a.dni, a]));
+  let ok = 0; const sinPareja = [], ambiguas = [], usados = new Set();
+  let batch = writeBatch(db), enLote = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    st.textContent = 'Procesando ' + (i + 1) + ' de ' + files.length + '...';
+    const m = emparejarFoto(f, porDni);
+    if (!m.a) { (m.ambigua ? ambiguas : sinPareja).push(f.name); continue; }
+    try {
+      const dataUrl = await reducirFoto(f);
+      batch.set(doc(asistentesCol, m.a.dni), { foto: dataUrl }, { merge: true });
+      enLote++; ok++;
+      if (enLote >= 25) { await batch.commit(); batch = writeBatch(db); enLote = 0; }
+    } catch (e) { sinPareja.push(f.name + ' (imagen dañada)'); }
+  }
+  try { if (enLote) await batch.commit(); } catch (e) { st.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e); return; }
+  const lista = arr => arr.slice(0, 30).join(', ') + (arr.length > 30 ? ' … y ' + (arr.length - 30) + ' más' : '');
+  st.textContent = '✓ ' + ok + ' fotos guardadas.' +
+    (sinPareja.length ? ' Sin pareja en la lista (' + sinPareja.length + '): ' + lista(sinPareja) + '.' : '') +
+    (ambiguas.length ? ' Dudosas, hay varias personas parecidas (' + ambiguas.length + '): ' + lista(ambiguas) + '. Súbelas una por una.' : '');
+}
+
 function initials(a) {
   const n = (a.nombre || '?').trim()[0] || '?';
   const ap = (a.apellidos || '').trim()[0] || '';
@@ -925,6 +1074,7 @@ function renderDelegSearch() {
   resultsEl.innerHTML = candidatos.map(a => `
     <div class="result">
       <div>
+        ${avatarHtml(a, 44, true)}
         <div class="result-name">${escapeHtml(fullName(a))} ${tieneZona(a) ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
         <div class="result-dni">${String(a.dni).startsWith('SD-') ? 'Sin DNI' : 'DNI ' + escapeHtml(a.dni)}</div>
       </div>
@@ -970,7 +1120,7 @@ function renderDelegList() {
   listEl.innerHTML = delegados.map((a, i) => `
     <tr onclick="toggleDelegado('${a.dni}')" style="cursor:pointer;" title="Tocar para quitar">
       <td><span class="num-badge">${i + 1}</span></td>
-      <td>${escapeHtml(fullName(a))}</td>
+      <td><div style="display:flex;align-items:center;gap:10px;">${avatarHtml(a, 36, false)}<span>${escapeHtml(fullName(a))}</span></div></td>
       <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
     </tr>
   `).join('');
@@ -999,7 +1149,7 @@ function renderProyDelegados() {
   listEl.innerHTML = delegados.map((a, i) => `
     <tr>
       <td><span class="num-badge">${i + 1}</span></td>
-      <td>${escapeHtml(fullName(a))}</td>
+      <td><div style="display:flex;align-items:center;gap:18px;">${avatarHtml(a, 72, false)}<span>${escapeHtml(fullName(a))}</span></div></td>
       <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
     </tr>
   `).join('');
@@ -1053,7 +1203,7 @@ function renderTable() {
       <td><span class="num-badge">${a.numero || (i + 1)}</span></td>
       <td>
         <div class="invitado-cell">
-          <div class="avatar">${escapeHtml(initials(a))}</div>
+          ${avatarHtml(a, 44, true)}
           <div>
             <div class="invitado-name">${escapeHtml(fullName(a))}</div>
           </div>
@@ -1576,6 +1726,11 @@ window.abrirComision = abrirComision;
 window.proyectarComision = proyectarComision;
 window.printCredentials = printCredentials;
 window.deletePerson = deletePerson;
+window.openFoto = openFoto;
+window.closeFoto = closeFoto;
+window.quitarFoto = quitarFoto;
+window.guardarFotoIndividual = guardarFotoIndividual;
+window.subirFotosLote = subirFotosLote;
 </script>
 </body>
 </html>
