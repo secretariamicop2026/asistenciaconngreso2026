@@ -128,6 +128,12 @@
   #proy-deleg-list td { color: white; font-size: 30px; font-weight: 600; padding: 16px 14px; border-bottom-color: rgba(255,255,255,0.15); }
   tbody tr:hover { background: var(--bg); }
   .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+  .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 22px 14px; }
+  .gal-card { text-align: center; }
+  .gal-card .avatar { display: flex; margin: 0 auto 8px; }
+  .gal-foto { width: 104px; height: 104px; font-size: 34px; margin: 0 auto 8px; background: var(--celeste-bg); color: var(--celeste); display: flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 50%; overflow: hidden; }
+  .gal-card .avatar.gal-foto { width: 104px; height: 104px; font-size: 34px; margin: 0 auto 8px; }
+  .gal-nombre { font-size: 14px; font-weight: 700; color: #0b1c33; line-height: 1.25; }
   .avatar { overflow: hidden; }
   .avatar.clic { cursor: pointer; }
   .foto-overlay { position: fixed; inset: 0; background: rgba(11,28,51,.8); display: none; align-items: center; justify-content: center; z-index: 5000; padding: 16px; }
@@ -325,6 +331,11 @@
     </div>
 
     <div class="nav-group">
+      <div class="nav-pill amarillo">GALERÍA</div>
+      <div class="nav-item" onclick="switchTab('galeria'); closeMobileMenu()">🖼 Delegados con foto</div>
+    </div>
+
+    <div class="nav-group">
       <div class="nav-pill rojo">ELEGIR DELEGADOS</div>
       <div class="nav-item" onclick="abrirComision('org'); closeMobileMenu()">🔹 Comisión Organizadora</div>
       <div class="nav-item" onclick="abrirComision('nom'); closeMobileMenu()">🔸 Comisión de Nombramientos</div>
@@ -475,6 +486,25 @@
     </div>
   </div>
 
+  <div id="view-galeria" style="display:none;">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title"><span id="gal-titulo">Zona 1</span> <span class="muted" style="font-size:16px;font-weight:600;">· <span id="gal-total">0</span> personas</span></div>
+      </div>
+    </div>
+    <div id="gal-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
+    <div class="card" id="gal-toolbar" style="display:none; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="text" id="gal-nombre-nuevo" placeholder="Nombre completo..." style="flex:1; min-width:200px;" autocomplete="off" onkeydown="if(event.key==='Enter')galAgregar()" />
+      <button onclick="document.getElementById('gal-foto-input').click()">📷 Foto</button>
+      <button class="celeste" onclick="galAgregar()">+ Agregar</button>
+      <button onclick="document.getElementById('gal-lote-input').click()">📷 Varias fotos (nombre = nombre del archivo)</button>
+      <input type="file" id="gal-foto-input" accept="image/*" style="display:none;" onchange="galElegirFoto(event)">
+      <input type="file" id="gal-lote-input" accept="image/*" multiple style="display:none;" onchange="galLote(event)">
+      <div class="muted" id="gal-estado" style="width:100%;"></div>
+    </div>
+    <div class="card"><div class="gal-grid" id="gal-grid"></div></div>
+  </div>
+
   <div id="view-delegados" style="display:none;">
     <div class="topbar">
       <div>
@@ -596,6 +626,21 @@
   </div>
 </div>
 
+
+<div class="foto-overlay" id="gal-overlay" onclick="if(event.target===this)closeGal()">
+  <div class="foto-box">
+    <div class="grande" id="gal-grande"></div>
+    <input type="text" id="gal-nombre-edit" style="width:100%; text-align:center; font-weight:700; margin-bottom:12px;" autocomplete="off" />
+    <div class="fbtns">
+      <button class="celeste" onclick="galGuardarNombre()">Guardar nombre</button>
+      <button onclick="document.getElementById('gal-cambiar-input').click()">📷 Cambiar foto</button>
+      <button style="background:#fff;color:var(--rojo);border-color:var(--rojo);" onclick="galEliminar()">Eliminar</button>
+      <button onclick="closeGal()">Cerrar</button>
+    </div>
+    <p class="muted" id="gal-edit-msg" style="margin:10px 0 0;"></p>
+    <input type="file" id="gal-cambiar-input" accept="image/*" style="display:none;" onchange="galCambiarFoto(event)">
+  </div>
+</div>
 
 <div class="foto-overlay" id="foto-overlay" onclick="if(event.target===this)closeFoto()">
   <div class="foto-box">
@@ -857,6 +902,7 @@ onSnapshot(asistentesCol, (snapshot) => {
   renderDelegSearch();
   renderDelegList();
   renderProyDelegados();
+  renderGaleria();
   document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>En vivo · ' + new Date().toLocaleTimeString();
 }, (err) => {
   showError('⚠️ No se pudo conectar a la base de datos. Revisa tu conexión. Detalle: ' + (err && err.message ? err.message : err));
@@ -868,6 +914,134 @@ onSnapshot(quorumDocRef, (snap) => {
   updateStats();
   renderProyeccion();
 }, () => {});
+
+// ===== GALERÍA DE DELEGADOS: Zona 1..7, Delegados generales (zona 0) y 3 grupos que se llenan a mano =====
+const galeriaCol = collection(db, "galeria");
+let galeria = [];
+let galTab = 'z1';
+const GAL_TABS = [
+  { k: 'z1', t: 'Zona 1', zona: '1' }, { k: 'z2', t: 'Zona 2', zona: '2' }, { k: 'z3', t: 'Zona 3', zona: '3' },
+  { k: 'z4', t: 'Zona 4', zona: '4' }, { k: 'z5', t: 'Zona 5', zona: '5' }, { k: 'z6', t: 'Zona 6', zona: '6' },
+  { k: 'z7', t: 'Zona 7', zona: '7' },
+  { k: 'gen', t: 'Delegados generales', zona: '0', color: '#d97706' },
+  { k: 'mis', t: 'Obreros con credencial misionera', manual: true, color: '#16a34a' },
+  { k: 'min', t: 'Pastores con credencial ministerial', manual: true, color: '#7c3aed' },
+  { k: 'lic', t: 'Pastores con licencia ministerial', manual: true, color: '#0ea5e9' }
+];
+onSnapshot(galeriaCol, (snap) => {
+  galeria = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderGaleria();
+}, () => {});
+
+function inicNombre(n) {
+  return String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+}
+function galSel(k) { galTab = k; renderGaleria(); }
+
+function renderGaleria() {
+  const grid = document.getElementById('gal-grid');
+  if (!grid) return;
+  const tab = GAL_TABS.find(x => x.k === galTab);
+  document.getElementById('gal-tabs').innerHTML = GAL_TABS.map(x => {
+    const n = x.manual ? galeria.filter(g => g.grupo === x.k).length : attendees.filter(a => String(a.zona ?? '') === x.zona).length;
+    const act = x.k === galTab, col = x.color || '#0b1c33';
+    return '<button class="com-chip" style="border-color:' + col + ';background:' + (act ? col : '#fff') + ';color:' + (act ? '#fff' : col) + ';" onclick="galSel(\'' + x.k + '\')">' + escapeHtml(x.t) + ' · ' + n + '</button>';
+  }).join('');
+  document.getElementById('gal-titulo').textContent = tab.t;
+  document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
+
+  let items;
+  if (tab.manual) {
+    const gs = galeria.filter(g => g.grupo === tab.k).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    items = gs.map(g => '<div class="gal-card" style="cursor:pointer;" onclick="openGal(\'' + g.id + '\')"><div class="avatar gal-foto">' +
+      (g.foto ? '<img src="' + g.foto + '" alt="">' : escapeHtml(inicNombre(g.nombre))) + '</div><div class="gal-nombre">' + escapeHtml(g.nombre) + '</div></div>');
+  } else {
+    const ps = attendees.filter(a => String(a.zona ?? '') === tab.zona).sort((a, b) => fullName(a).localeCompare(fullName(b)));
+    items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>');
+  }
+  document.getElementById('gal-total').textContent = items.length;
+  grid.innerHTML = items.length ? items.join('') :
+    '<div class="empty" style="grid-column:1/-1;">' + (tab.manual ? 'Todavía no hay nadie aquí. Agrega personas con el formulario de arriba.' : 'No hay personas en este grupo todavía.') + '</div>';
+}
+
+// --- Agregar a mano (grupos de obreros / pastores) ---
+let galFotoPend = '';
+async function galElegirFoto(ev) {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f) return;
+  const st = document.getElementById('gal-estado');
+  try { galFotoPend = await reducirFoto(f); st.textContent = '📷 Foto lista: ' + f.name; }
+  catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+async function galAgregar() {
+  const inp = document.getElementById('gal-nombre-nuevo');
+  const st = document.getElementById('gal-estado');
+  const n = inp.value.replace(/\s+/g, ' ').trim();
+  if (!n) { st.textContent = 'Escribe el nombre.'; return; }
+  try {
+    await setDoc(doc(galeriaCol), { grupo: galTab, nombre: n, foto: galFotoPend || '', ts: Date.now() });
+    inp.value = ''; galFotoPend = ''; st.textContent = '✓ Agregado';
+  } catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+// Varias fotos de una vez: el nombre de cada persona sale del nombre del archivo
+async function galLote(ev) {
+  const files = Array.from(ev.target.files || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name));
+  ev.target.value = '';
+  const st = document.getElementById('gal-estado');
+  if (!files.length) return;
+  let batch = writeBatch(db), n = 0, ok = 0;
+  const base = Date.now();
+  for (let i = 0; i < files.length; i++) {
+    st.textContent = 'Procesando ' + (i + 1) + ' de ' + files.length + '...';
+    const nombre = files[i].name.replace(/\.[^.]+$/, '').replace(/\(\d+\)/g, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    try {
+      const foto = await reducirFoto(files[i]);
+      batch.set(doc(galeriaCol), { grupo: galTab, nombre, foto, ts: base + i });
+      n++; ok++;
+      if (n >= 25) { await batch.commit(); batch = writeBatch(db); n = 0; }
+    } catch (e) {}
+  }
+  try { if (n) await batch.commit(); st.textContent = '✓ ' + ok + ' personas agregadas (el nombre salió del nombre del archivo).'; }
+  catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+
+// --- Editar / eliminar a alguien de estos grupos ---
+let galEditId = null;
+function openGal(id) {
+  const g = galeria.find(x => x.id === id);
+  if (!g) return;
+  galEditId = id;
+  document.getElementById('gal-grande').innerHTML = g.foto ? '<img src="' + g.foto + '" alt="">' : escapeHtml(inicNombre(g.nombre));
+  document.getElementById('gal-nombre-edit').value = g.nombre;
+  document.getElementById('gal-edit-msg').textContent = '';
+  document.getElementById('gal-overlay').classList.add('open');
+}
+function closeGal() { document.getElementById('gal-overlay').classList.remove('open'); galEditId = null; }
+async function galGuardarNombre() {
+  if (!galEditId) return;
+  const n = document.getElementById('gal-nombre-edit').value.replace(/\s+/g, ' ').trim();
+  if (!n) return;
+  try { await setDoc(doc(galeriaCol, galEditId), { nombre: n }, { merge: true }); closeGal(); }
+  catch (e) { document.getElementById('gal-edit-msg').textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+async function galCambiarFoto(ev) {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f || !galEditId) return;
+  const msg = document.getElementById('gal-edit-msg');
+  try {
+    const foto = await reducirFoto(f);
+    await setDoc(doc(galeriaCol, galEditId), { foto }, { merge: true });
+    document.getElementById('gal-grande').innerHTML = '<img src="' + foto + '" alt="">';
+    msg.textContent = '✓ Foto guardada';
+  } catch (e) { msg.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+async function galEliminar() {
+  if (!galEditId) return;
+  const g = galeria.find(x => x.id === galEditId);
+  if (!g || !confirm('¿Quitar a ' + g.nombre + ' de este grupo?')) return;
+  try { await deleteDoc(doc(galeriaCol, galEditId)); closeGal(); }
+  catch (e) { document.getElementById('gal-edit-msg').textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
 
 function updateStats() {
   const total = attendees.length;
@@ -953,6 +1127,8 @@ function switchTab(tab) {
   document.getElementById('view-registro').style.display = tab === 'registro' ? 'block' : 'none';
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
   document.getElementById('view-delegados').style.display = tab === 'delegados' ? 'block' : 'none';
+  document.getElementById('view-galeria').style.display = tab === 'galeria' ? 'block' : 'none';
+  if (tab === 'galeria') renderGaleria();
   if (tab !== 'registro' && scanning) stopScanner();
   if (tab === 'registro') renderTable();
   if (tab === 'proyeccion') renderProyeccion();
@@ -1727,6 +1903,15 @@ window.proyectarComision = proyectarComision;
 window.printCredentials = printCredentials;
 window.deletePerson = deletePerson;
 window.openFoto = openFoto;
+window.galSel = galSel;
+window.galElegirFoto = galElegirFoto;
+window.galAgregar = galAgregar;
+window.galLote = galLote;
+window.openGal = openGal;
+window.closeGal = closeGal;
+window.galGuardarNombre = galGuardarNombre;
+window.galCambiarFoto = galCambiarFoto;
+window.galEliminar = galEliminar;
 window.closeFoto = closeFoto;
 window.quitarFoto = quitarFoto;
 window.guardarFotoIndividual = guardarFotoIndividual;
