@@ -449,6 +449,33 @@
   .proy-ico { width: 64px; height: 64px; flex-shrink: 0; color: #eaf6ff; opacity: .92; }
   .proy-stat-body { min-width: 0; }
   @media (max-width: 700px) { .quorum-ico { display: none; } .proy-ico { width: 44px; height: 44px; } }
+  /* Proyección de delegados v2: póster a la izquierda, contador grande, título con brillo */
+  .pd-layout { flex: 1; min-height: 0; display: flex; gap: 26px; }
+  .pd-aside { width: clamp(300px, 29vw, 620px); flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+  .pd-poster { border-radius: 18px; overflow: hidden; border: 1px solid rgba(160,210,250,.35); box-shadow: 0 0 30px color-mix(in srgb, var(--pd-color, #5cc3ec) 45%, transparent); line-height: 0; }
+  .pd-poster img { width: 100%; display: block; }
+  .pd-contador { flex: 1; min-height: 0; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--pd-color, #5cc3ec) 38%, #0a2347) 0%, #0a2347 100%); border: 1.5px solid var(--pd-color, #5cc3ec); }
+  .pd-c-lbl { font-size: clamp(13px, 1.25vw, 22px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; opacity: .9; }
+  .pd-c-num { font-weight: 900; line-height: 1; margin: 8px 0 10px; display: flex; align-items: baseline; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .pd-c-num #proy-deleg-total { font-size: clamp(80px, 9vw, 190px); text-shadow: 0 0 22px var(--pd-color, #5cc3ec); }
+  .pd-c-de { font-size: clamp(28px, 3.2vw, 64px); font-weight: 800; opacity: .85; }
+  .pd-barra { width: 86%; height: 14px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; margin-top: 4px; }
+  #pd-barra-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--pd-color, #5cc3ec), #ffffff); transition: width .6s ease; }
+  .pd-c-pct { margin-top: 8px; font-size: clamp(13px, 1.2vw, 20px); font-weight: 700; opacity: .85; }
+  .pd-reloj { text-align: center; padding-bottom: 2px; }
+  .pd-reloj .proy-clock { font-size: clamp(20px, 1.9vw, 34px); margin: 0; }
+  .pd-reloj .proy-live { justify-content: center; }
+  .pd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pd-titulo-wrap { padding: 0 165px; display: flex; justify-content: center; margin-bottom: 8px; }
+  #proy-deleg-label { display: flex; align-items: center; gap: 20px; font-size: clamp(22px, 2.4vw, 46px); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #fff; line-height: 1.1; text-align: center; white-space: nowrap;
+    text-shadow: 0 0 10px var(--pd-color, #5cc3ec), 0 0 30px var(--pd-color, #5cc3ec), 0 0 60px color-mix(in srgb, var(--pd-color, #5cc3ec) 70%, transparent); animation: pdBrillo 3.4s ease-in-out infinite; }
+  #proy-deleg-label::before, #proy-deleg-label::after { content: ''; width: clamp(20px, 3.5vw, 80px); height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--pd-color, #5cc3ec)); box-shadow: 0 0 12px var(--pd-color, #5cc3ec); }
+  #proy-deleg-label::after { transform: scaleX(-1); }
+  @keyframes pdBrillo { 0%,100% { text-shadow: 0 0 8px var(--pd-color, #5cc3ec), 0 0 22px var(--pd-color, #5cc3ec); } 50% { text-shadow: 0 0 14px var(--pd-color, #5cc3ec), 0 0 40px var(--pd-color, #5cc3ec), 0 0 80px var(--pd-color, #5cc3ec); } }
+  #pd-cabezas { gap: clamp(14px, 2.2vw, 44px) !important; }
+  .pd-meta-fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pd-meta-fila input { width: 110px; }
 </style>
 </head>
 <body>
@@ -743,6 +770,12 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <button class="com-chip" id="comchip-nom" onclick="abrirComision('nom')">Nombramientos</button>
     </div>
     <div id="deleg-banner" class="com-banner"></div>
+    <div class="card pd-meta-fila">
+      <span class="muted" style="margin:0;">Total de delegados de esta comisión (en la proyección se ve «25 de 43»):</span>
+      <input type="number" id="com-meta-input" min="0" placeholder="Ej. 43" onkeydown="if(event.key==='Enter')saveComMeta()">
+      <button class="primary" onclick="saveComMeta()">Guardar</button>
+      <span class="muted" id="com-meta-estado" style="margin:0;"></span>
+    </div>
 
     <div class="card">
       <div class="search-row">
@@ -835,20 +868,24 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
 
 <div class="proy-screen" id="proy-deleg-screen">
   <button class="proy-back" onclick="abrirComision()">← Volver a elegir</button>
-  <div class="pd-top">
-    <div class="pd-izq">
-      <div class="proy-brand pd-brand">CONGRESO <span>2026</span></div>
-      <div class="proy-brand-sub" id="proy-deleg-sub">Misión Centro-Oeste del Perú</div>
-    </div>
-    <div class="pd-centro"><div id="proy-deleg-label">Comisión Organizadora</div></div>
-    <div class="pd-der">
-      <div class="proy-clock" id="proy-deleg-clock">--:--:--</div>
-      <div class="pd-count"><span id="proy-deleg-total">0</span> <small>delegados</small></div>
-    </div>
+  <div class="pd-layout">
+    <aside class="pd-aside">
+      <div class="pd-poster"><img id="pd-poster-img" alt="Congreso 2026 · A una voz hasta que Él venga"></div>
+      <div class="pd-contador">
+        <div class="pd-c-lbl">Delegados elegidos</div>
+        <div class="pd-c-num"><span id="proy-deleg-total">0</span><span class="pd-c-de" id="pd-c-de"></span></div>
+        <div class="pd-barra" id="pd-barra"><div id="pd-barra-fill"></div></div>
+        <div class="pd-c-pct" id="pd-c-pct"></div>
+      </div>
+      <div class="pd-reloj"><div class="proy-clock" id="proy-deleg-clock">--:--:--</div><div class="proy-live"><span class="live-dot"></span>En vivo</div></div>
+    </aside>
+    <main class="pd-main">
+      <div class="pd-titulo-wrap"><div id="proy-deleg-label">Comisión Organizadora</div></div>
+      <div id="pd-cabezas"></div>
+      <div class="pd-grid" id="pd-grid"></div>
+      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px; text-align:center;">Todavía no se ha elegido a nadie</div>
+    </main>
   </div>
-  <div id="pd-cabezas"></div>
-  <div class="pd-grid" id="pd-grid"></div>
-  <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px; text-align:center;">Todavía no se ha elegido a nadie</div>
 </div>
 
 
@@ -1231,6 +1268,22 @@ onSnapshot(quorumDocRef, (snap) => {
   updateStats();
   renderProyeccion();
 }, () => {});
+
+const comMetaRef = doc(db, "config", "comisiones");
+let comMeta = {};
+onSnapshot(comMetaRef, (snap) => {
+  comMeta = snap.exists() ? snap.data() : {};
+  const inp = document.getElementById('com-meta-input');
+  if (inp && document.activeElement !== inp) inp.value = comMeta[comActual] || '';
+  renderProyDelegados();
+}, () => {});
+async function saveComMeta() {
+  const inp = document.getElementById('com-meta-input'), st = document.getElementById('com-meta-estado');
+  const val = parseInt(inp.value, 10) || 0;
+  try { await setDoc(comMetaRef, { [comActual]: val }, { merge: true }); st.textContent = '✓ Guardado'; setTimeout(() => { st.textContent = ''; }, 2000); }
+  catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+window.saveComMeta = saveComMeta;
 
 // ===== GALERÍA DE DELEGADOS: Zona 1..7, Delegados generales (zona 0) y 3 grupos que se llenan a mano =====
 const galeriaCol = collection(db, "galeria");
@@ -1664,6 +1717,7 @@ function renderComisionHeader() {
   if (banner) { banner.style.background = c.color; banner.textContent = '🗳️ Eligiendo delegados: ' + c.nombre.toUpperCase(); }
   const titulo = document.getElementById('deleg-titulo');
   if (titulo) titulo.textContent = 'Delegados · ' + c.nombre;
+  const mi = document.getElementById('com-meta-input'); if (mi && document.activeElement !== mi) mi.value = (typeof comMeta !== 'undefined' && comMeta[comActual]) || '';
   const th = document.getElementById('deleg-th-nombre');
   if (th) th.textContent = 'Delegado de ' + c.corto;
   Object.keys(COMISIONES).forEach(k => {
@@ -1764,7 +1818,7 @@ function renderDelegList() {
 
 const CABEZAS = {
   org: [
-    { nombre: 'Pr. Daniel Montalbán', rol: 'Presidente de la Unión Peruana del Norte', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) },
+    { nombre: 'Pr. Daniel Montalbán', rol: 'Presidente de la UPN', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) },
     { nombre: 'Pr. Alberto Carranza', rol: 'Presidente de la MiCOP', ini: 'AC', match: n => n.includes('alberto') && n.includes('carranza') }
   ]
 };
@@ -1794,7 +1848,15 @@ function renderProyDelegados() {
   const cabezas = defs.map(d => ({ d, a: attendees.find(x => d.match(normalize(fullName(x)))) }));
   const excl = new Set(cabezas.filter(x => x.a).map(x => x.a.dni));
   const delegados = delegadosProy(comActual, excl);
-  document.getElementById('proy-deleg-total').textContent = delegados.length + cabezas.length;
+  const totalElegidos = delegados.length + cabezas.length;
+  document.getElementById('proy-deleg-total').textContent = totalElegidos;
+  const meta = (comMeta && comMeta[comActual]) || 0;
+  document.getElementById('pd-c-de').textContent = meta ? 'de ' + meta : '';
+  document.getElementById('pd-barra').style.display = meta ? '' : 'none';
+  document.getElementById('pd-barra-fill').style.width = meta ? Math.min(100, Math.round(totalElegidos / meta * 100)) + '%' : '0%';
+  document.getElementById('pd-c-pct').textContent = !meta ? '' : totalElegidos >= meta ? '¡Completo!' : 'Faltan ' + (meta - totalElegidos);
+  const pim = document.getElementById('pd-poster-img');
+  if (pim && !pim.dataset.ok) { const fuente = document.querySelector('#splash .capa > img:first-child'); if (fuente) { pim.src = fuente.src; pim.dataset.ok = '1'; } }
 
   const primera = !pdPrev || pdPrev.key !== comActual;
   const vistos = primera ? new Set() : pdPrev.set;
