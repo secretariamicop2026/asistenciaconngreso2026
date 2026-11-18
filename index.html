@@ -407,6 +407,14 @@
   .fase-titulo { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 800; padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid; letter-spacing: .5px; }
   .fase-titulo .cnt { font-size: 14px; font-weight: 800; padding: 2px 12px; border-radius: 999px; background: rgba(120,180,230,.18); color: var(--text); }
   #view-fase .gal-pill { background: rgba(120,180,230,0.06); }
+  .fe-selects { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+  .fe-campo { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 190px; }
+  .fe-campo span { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+  .fe-campo select { width: 100%; padding: 11px 12px; font-size: 15px; font-weight: 600; }
+  .fe-resumen { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .fe-res-t { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }
+  .fe-res-i { padding: 6px 14px; border-radius: 999px; background: rgba(120,180,230,.1); border: 1px solid var(--border); font-size: 14px; }
+  .fe-res-i b { font-size: 17px; color: #7fd3f5; margin-right: 4px; }
 </style>
 </head>
 <body>
@@ -652,10 +660,14 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       </div>
     </div>
     <div class="card gal-nav">
-      <div class="gal-fila"><div class="gal-etq">Fase etaria</div><div class="gal-pills" id="fe-p-fase"></div></div>
-      <div class="gal-fila"><div class="gal-etq">Sexo</div><div class="gal-pills" id="fe-p-sexo"></div></div>
-      <div class="gal-fila"><div class="gal-etq">Zona</div><div class="gal-pills" id="fe-p-zona"></div></div>
-      <div class="gal-fila"><div class="gal-etq">Tipo</div><div class="gal-pills" id="fe-p-tipo"></div></div>
+      <div class="fe-selects">
+        <label class="fe-campo"><span>Fase etaria</span><select id="fe-s-fase" onchange="feSel()"></select></label>
+        <label class="fe-campo"><span>Sexo</span><select id="fe-s-sexo" onchange="feSel()"></select></label>
+        <label class="fe-campo"><span>Zona</span><select id="fe-s-zona" onchange="feSel()"></select></label>
+        <label class="fe-campo"><span>Tipo</span><select id="fe-s-tipo" onchange="feSel()"></select></label>
+        <button onclick="feLimpiar()">Quitar selección</button>
+      </div>
+      <div class="fe-resumen" id="fe-resumen"></div>
     </div>
     <div id="fe-secciones"></div>
   </div>
@@ -1296,31 +1308,40 @@ function galSel(k) { galTab = k; renderGaleria(); }
 // --- Vista "Fase etaria": adultos / jóvenes, varones / mujeres, por zona o todas ---
 let feFase = 'all', feSexo = 'all', feZona = 'all', feTipo = 'all';
 function feSet(campo, v) { if (campo === 'fase') feFase = v; if (campo === 'sexo') feSexo = v; if (campo === 'zona') feZona = v; if (campo === 'tipo') feTipo = v; renderFase(); }
+function feSel() {
+  feFase = document.getElementById('fe-s-fase').value; feSexo = document.getElementById('fe-s-sexo').value;
+  feZona = document.getElementById('fe-s-zona').value; feTipo = document.getElementById('fe-s-tipo').value;
+  renderFase();
+}
+function feLimpiar() { feFase = 'all'; feSexo = 'all'; feZona = 'all'; feTipo = 'all'; renderFase(); }
 function renderFase() {
   const cont = document.getElementById('fe-secciones');
   if (!cont) return;
   const base = attendees.slice();
-  const pill = (campo, val, texto, n, col, act) => '<button class="gal-pill' + (act ? ' act' : '') + '" style="' + (act ? 'background:' + col + ';border-color:' + col + ';color:#04142e;' : 'color:' + col + ';') +
-    '" onclick="feSet(\'' + campo + '\',\'' + val + '\')">' + escapeHtml(texto) + '<span class="cnt">' + n + '</span></button>';
   const pasa = (a, omitir) => (omitir === 'fase' || feFase === 'all' || (feFase === 'sin' ? !a.fase : a.fase === feFase)) &&
     (omitir === 'sexo' || feSexo === 'all' || a.sexo === feSexo) &&
     (omitir === 'zona' || feZona === 'all' || String(a.zona ?? '') === feZona) &&
     (omitir === 'tipo' || feTipo === 'all' || (a.tipo || 'sin') === feTipo);
   const cuenta = (omitir, f) => base.filter(a => pasa(a, omitir) && f(a)).length;
-  document.getElementById('fe-p-fase').innerHTML =
-    pill('fase', 'all', 'Adultos y jóvenes (separados)', cuenta('fase', () => true), '#4fb8e6', feFase === 'all') +
-    pill('fase', 'Adulto', 'Adultos', cuenta('fase', a => a.fase === 'Adulto'), '#4fb8e6', feFase === 'Adulto') +
-    pill('fase', 'Joven', 'Jóvenes', cuenta('fase', a => a.fase === 'Joven'), '#e2a64a', feFase === 'Joven') +
-    (base.some(a => !a.fase) ? pill('fase', 'sin', 'Sin fase etaria', cuenta('fase', a => !a.fase), '#94abc7', feFase === 'sin') : '');
-  document.getElementById('fe-p-sexo').innerHTML =
-    pill('sexo', 'all', 'Todos', cuenta('sexo', () => true), '#4fb8e6', feSexo === 'all') +
-    pill('sexo', 'M', 'Varones', cuenta('sexo', a => a.sexo === 'M'), '#4fb8e6', feSexo === 'M') +
-    pill('sexo', 'F', 'Mujeres', cuenta('sexo', a => a.sexo === 'F'), '#e585a6', feSexo === 'F');
-  document.getElementById('fe-p-zona').innerHTML = pill('zona', 'all', 'Todas las zonas', cuenta('zona', () => true), '#3dbf93', feZona === 'all') +
-    ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => pill('zona', z, z === '0' ? 'Zona 0' : 'Zona ' + z, cuenta('zona', a => String(a.zona ?? '') === z), '#3dbf93', feZona === z)).join('');
-  document.getElementById('fe-p-tipo').innerHTML = pill('tipo', 'all', 'Todos', cuenta('tipo', () => true), '#b39cf5', feTipo === 'all') +
-    TIPOS.map(t => pill('tipo', t.k, t.label, cuenta('tipo', a => a.tipo === t.k), '#b39cf5', feTipo === t.k)).join('') +
-    (base.some(a => !a.tipo) ? pill('tipo', 'sin', 'Sin clasificar', cuenta('tipo', a => !a.tipo), '#94abc7', feTipo === 'sin') : '');
+  const llenar = (id, valor, opciones) => {
+    const el = document.getElementById(id);
+    const html = opciones.map(o => '<option value="' + o[0] + '">' + escapeHtml(o[1]) + '</option>').join('');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+    el.value = valor;
+  };
+  llenar('fe-s-fase', feFase, [['all', 'Todas (adultos y jóvenes)'], ['Adulto', 'Adultos (' + cuenta('fase', a => a.fase === 'Adulto') + ')'], ['Joven', 'Jóvenes (' + cuenta('fase', a => a.fase === 'Joven') + ')']]
+    .concat(base.some(a => !a.fase) ? [['sin', 'Sin fase etaria (' + cuenta('fase', a => !a.fase) + ')']] : []));
+  llenar('fe-s-sexo', feSexo, [['all', 'Todos (varones y mujeres)'], ['M', 'Varones (' + cuenta('sexo', a => a.sexo === 'M') + ')'], ['F', 'Mujeres (' + cuenta('sexo', a => a.sexo === 'F') + ')']]);
+  llenar('fe-s-zona', feZona, [['all', 'Todas las zonas']].concat(['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, 'Zona ' + z + ' (' + cuenta('zona', a => String(a.zona ?? '') === z) + ')'])));
+  llenar('fe-s-tipo', feTipo, [['all', 'Todos los tipos']].concat(TIPOS.map(t => [t.k, t.label + ' (' + cuenta('tipo', a => a.tipo === t.k) + ')']))
+    .concat(base.some(a => !a.tipo) ? [['sin', 'Sin clasificar (' + cuenta('tipo', a => !a.tipo) + ')']] : []));
+
+  // Resumen: los 4 grupos (varones/mujeres × adultos/jóvenes) dentro de la zona y tipo elegidos
+  const c4 = (sx, fs) => base.filter(a => pasa(a, 'sexo') && a.sexo === sx && a.fase === fs && (feFase === 'all' || feFase === fs) && (feSexo === 'all' || feSexo === sx)).length;
+  const grupo4 = [['Varones adultos', 'M', 'Adulto'], ['Varones jóvenes', 'M', 'Joven'], ['Mujeres adultas', 'F', 'Adulto'], ['Mujeres jóvenes', 'F', 'Joven']];
+  const dentro = base.filter(a => (feZona === 'all' || String(a.zona ?? '') === feZona) && (feTipo === 'all' || (a.tipo || 'sin') === feTipo));
+  document.getElementById('fe-resumen').innerHTML = '<span class="fe-res-t">' + (feZona === 'all' ? 'Todas las zonas' : 'Zona ' + feZona) + ':</span>' +
+    grupo4.map(g => '<span class="fe-res-i"><b>' + dentro.filter(a => a.sexo === g[1] && a.fase === g[2]).length + '</b> ' + g[0] + '</span>').join('');
 
   const lista = base.filter(a => pasa(a, null)).sort((a, b) => fullName(a).localeCompare(fullName(b), 'es'));
   const grupos = [
@@ -1333,14 +1354,13 @@ function renderFase() {
     '<div class="card"><div class="fase-titulo" style="color:' + g.col + ';border-color:' + g.col + '55;">' + g.t + '<span class="cnt">' + g.items.length + '</span></div>' +
     '<div class="gal-grid">' + g.items.map(tarjeta).join('') + '</div></div>').join('') :
     '<div class="card"><div class="empty">No hay personas con esos filtros. Si aún no cargaste el Excel con la fase etaria, importa la lista y aparecerán aquí.</div></div>';
-  const partes = ['Fase etaria'];
-  if (feZona !== 'all') partes.push('Zona ' + feZona);
-  if (feFase === 'Adulto') partes.push('Adultos'); else if (feFase === 'Joven') partes.push('Jóvenes');
-  if (feSexo === 'M') partes.push('Varones'); else if (feSexo === 'F') partes.push('Mujeres');
-  document.getElementById('fe-titulo').textContent = partes.join(' · ');
+  let quien = feSexo === 'M' ? (feFase === 'Adulto' ? 'Varones adultos' : feFase === 'Joven' ? 'Varones jóvenes' : 'Varones')
+            : feSexo === 'F' ? (feFase === 'Adulto' ? 'Mujeres adultas' : feFase === 'Joven' ? 'Mujeres jóvenes' : 'Mujeres')
+            : (feFase === 'Adulto' ? 'Adultos' : feFase === 'Joven' ? 'Jóvenes' : 'Fase etaria');
+  document.getElementById('fe-titulo').textContent = quien + (feZona !== 'all' ? ' · Zona ' + feZona : ' · Todas las zonas');
   document.getElementById('fe-total').textContent = lista.length;
 }
-window.feSet = feSet;
+window.feSet = feSet; window.feSel = feSel; window.feLimpiar = feLimpiar;
 
 function renderGaleria() {
   const grid = document.getElementById('gal-grid');
