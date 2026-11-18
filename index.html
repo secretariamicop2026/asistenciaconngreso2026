@@ -449,30 +449,33 @@
   .proy-ico { width: 64px; height: 64px; flex-shrink: 0; color: #eaf6ff; opacity: .92; }
   .proy-stat-body { min-width: 0; }
   @media (max-width: 700px) { .quorum-ico { display: none; } .proy-ico { width: 44px; height: 44px; } }
-  /* Proyección de delegados v2: póster a la izquierda, contador grande, título con brillo */
-  .pd-layout { flex: 1; min-height: 0; display: flex; gap: 26px; }
-  .pd-aside { width: clamp(300px, 29vw, 620px); flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
-  .pd-poster { border-radius: 18px; overflow: hidden; border: 1px solid rgba(160,210,250,.35); box-shadow: 0 0 30px color-mix(in srgb, var(--pd-color, #5cc3ec) 45%, transparent); line-height: 0; }
+  /* Proyección de delegados v3: encabezado compacto y todo el ancho para los delegados */
+  .pd-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+  .pd-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-shrink: 0; }
+  .pd-izq, .pd-der { width: clamp(190px, 16vw, 330px); flex-shrink: 0; }
+  .pd-izq { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pd-poster { width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid rgba(160,210,250,.4); box-shadow: 0 0 22px color-mix(in srgb, var(--pd-color, #5cc3ec) 45%, transparent); line-height: 0; }
   .pd-poster img { width: 100%; display: block; }
-  .pd-contador { flex: 1; min-height: 0; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-    background: linear-gradient(160deg, color-mix(in srgb, var(--pd-color, #5cc3ec) 38%, #0a2347) 0%, #0a2347 100%); border: 1.5px solid var(--pd-color, #5cc3ec); }
-  .pd-c-lbl { font-size: clamp(13px, 1.25vw, 22px); font-weight: 800; letter-spacing: 2px; text-transform: uppercase; opacity: .9; }
-  .pd-c-num { font-weight: 900; line-height: 1; margin: 8px 0 10px; display: flex; align-items: baseline; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .pd-c-num #proy-deleg-total { font-size: clamp(80px, 9vw, 190px); text-shadow: 0 0 22px var(--pd-color, #5cc3ec); }
-  .pd-c-de { font-size: clamp(28px, 3.2vw, 64px); font-weight: 800; opacity: .85; }
-  .pd-barra { width: 86%; height: 14px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; margin-top: 4px; }
-  #pd-barra-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--pd-color, #5cc3ec), #ffffff); transition: width .6s ease; }
-  .pd-c-pct { margin-top: 8px; font-size: clamp(13px, 1.2vw, 20px); font-weight: 700; opacity: .85; }
-  .pd-reloj { text-align: center; padding-bottom: 2px; }
-  .pd-reloj .proy-clock { font-size: clamp(20px, 1.9vw, 34px); margin: 0; }
-  .pd-reloj .proy-live { justify-content: center; }
-  .pd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .pd-titulo-wrap { padding: 0 165px; display: flex; justify-content: center; margin-bottom: 8px; }
-  #proy-deleg-label { display: flex; align-items: center; gap: 20px; font-size: clamp(22px, 2.4vw, 46px); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #fff; line-height: 1.1; text-align: center; white-space: nowrap;
+  .pd-reloj { text-align: center; }
+  .pd-reloj .proy-clock { font-size: clamp(16px, 1.5vw, 26px); margin: 0; }
+  .pd-reloj .proy-live { justify-content: center; font-size: 12px; }
+  .pd-centro { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+  .pd-titulo-wrap { display: flex; justify-content: center; margin-bottom: 6px; max-width: 100%; }
+  #proy-deleg-label { display: flex; align-items: center; gap: 18px; font-size: clamp(22px, 2.4vw, 46px); font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #fff; line-height: 1.1; text-align: center; white-space: nowrap;
     text-shadow: 0 0 10px var(--pd-color, #5cc3ec), 0 0 30px var(--pd-color, #5cc3ec), 0 0 60px color-mix(in srgb, var(--pd-color, #5cc3ec) 70%, transparent); animation: pdBrillo 3.4s ease-in-out infinite; }
   #proy-deleg-label::before, #proy-deleg-label::after { content: ''; width: clamp(20px, 3.5vw, 80px); height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--pd-color, #5cc3ec)); box-shadow: 0 0 12px var(--pd-color, #5cc3ec); }
   #proy-deleg-label::after { transform: scaleX(-1); }
   @keyframes pdBrillo { 0%,100% { text-shadow: 0 0 8px var(--pd-color, #5cc3ec), 0 0 22px var(--pd-color, #5cc3ec); } 50% { text-shadow: 0 0 14px var(--pd-color, #5cc3ec), 0 0 40px var(--pd-color, #5cc3ec), 0 0 80px var(--pd-color, #5cc3ec); } }
+  .pd-der { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+  .pd-der .proy-back { position: static; align-self: flex-end; }
+  .pd-contador { border-radius: 16px; padding: 10px 14px 12px; text-align: center; background: linear-gradient(160deg, color-mix(in srgb, var(--pd-color, #5cc3ec) 38%, #0a2347) 0%, #0a2347 100%); border: 1.5px solid var(--pd-color, #5cc3ec); }
+  .pd-c-lbl { font-size: clamp(10px, .85vw, 15px); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; opacity: .9; }
+  .pd-c-num { font-weight: 900; line-height: 1; margin: 6px 0 8px; display: flex; align-items: baseline; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .pd-c-num #proy-deleg-total { font-size: clamp(36px, 3.8vw, 72px); text-shadow: 0 0 16px var(--pd-color, #5cc3ec); }
+  .pd-c-de { font-size: clamp(16px, 1.7vw, 32px); font-weight: 800; opacity: .85; }
+  .pd-barra { width: 100%; height: 9px; border-radius: 999px; background: rgba(255,255,255,.14); overflow: hidden; }
+  #pd-barra-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--pd-color, #5cc3ec), #ffffff); transition: width .6s ease; }
+  .pd-c-pct { margin-top: 5px; font-size: clamp(11px, .9vw, 16px); font-weight: 700; opacity: .85; }
   #pd-cabezas { gap: clamp(14px, 2.2vw, 44px) !important; }
   .pd-meta-fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .pd-meta-fila input { width: 110px; }
@@ -867,24 +870,28 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
 </div>
 
 <div class="proy-screen" id="proy-deleg-screen">
-  <button class="proy-back" onclick="abrirComision()">← Volver a elegir</button>
   <div class="pd-layout">
-    <aside class="pd-aside">
-      <div class="pd-poster"><img id="pd-poster-img" alt="Congreso 2026 · A una voz hasta que Él venga"></div>
-      <div class="pd-contador">
-        <div class="pd-c-lbl">Delegados elegidos</div>
-        <div class="pd-c-num"><span id="proy-deleg-total">0</span><span class="pd-c-de" id="pd-c-de"></span></div>
-        <div class="pd-barra" id="pd-barra"><div id="pd-barra-fill"></div></div>
-        <div class="pd-c-pct" id="pd-c-pct"></div>
+    <div class="pd-header">
+      <div class="pd-izq">
+        <div class="pd-poster"><img id="pd-poster-img" alt="Congreso 2026 · A una voz hasta que Él venga"></div>
+        <div class="pd-reloj"><div class="proy-clock" id="proy-deleg-clock">--:--:--</div><div class="proy-live"><span class="live-dot"></span>En vivo</div></div>
       </div>
-      <div class="pd-reloj"><div class="proy-clock" id="proy-deleg-clock">--:--:--</div><div class="proy-live"><span class="live-dot"></span>En vivo</div></div>
-    </aside>
-    <main class="pd-main">
-      <div class="pd-titulo-wrap"><div id="proy-deleg-label">Comisión Organizadora</div></div>
-      <div id="pd-cabezas"></div>
-      <div class="pd-grid" id="pd-grid"></div>
-      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px; text-align:center;">Todavía no se ha elegido a nadie</div>
-    </main>
+      <div class="pd-centro">
+        <div class="pd-titulo-wrap"><div id="proy-deleg-label">Comisión Organizadora</div></div>
+        <div id="pd-cabezas"></div>
+      </div>
+      <div class="pd-der">
+        <button class="proy-back" onclick="abrirComision()">← Volver a elegir</button>
+        <div class="pd-contador">
+          <div class="pd-c-lbl">Delegados elegidos</div>
+          <div class="pd-c-num"><span id="proy-deleg-total">0</span><span class="pd-c-de" id="pd-c-de"></span></div>
+          <div class="pd-barra" id="pd-barra"><div id="pd-barra-fill"></div></div>
+          <div class="pd-c-pct" id="pd-c-pct"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pd-grid" id="pd-grid"></div>
+    <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px; text-align:center;">Todavía no se ha elegido a nadie</div>
   </div>
 </div>
 
@@ -1861,7 +1868,7 @@ function renderProyDelegados() {
   const primera = !pdPrev || pdPrev.key !== comActual;
   const vistos = primera ? new Set() : pdPrev.set;
   const nuevoSet = new Set();
-  const dh = Math.max(90, Math.min(140, Math.round(window.innerHeight * 0.125)));
+  const dh = Math.max(80, Math.min(125, Math.round(window.innerHeight * 0.105)));
   document.getElementById('pd-cabezas').style.setProperty('--dh', dh + 'px');
   document.getElementById('pd-cabezas').innerHTML = cabezas.map((x, i) =>
     '<div class="pd-cab" style="--delay:' + (i * 0.25) + 's;"><div class="pd-av">' + (x.a && x.a.foto ? '<img src="' + x.a.foto + '" alt="">' : escapeHtml(x.d.ini)) + '</div>' +
