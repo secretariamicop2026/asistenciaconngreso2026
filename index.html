@@ -492,6 +492,10 @@
   .tabla-reg .acc-cell { white-space: nowrap; width: 1%; }
   .acc-fila { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
   .tabla-reg .row-action-btn { padding: 4px 9px; font-size: 11px; line-height: 1.2; white-space: nowrap; border-radius: 7px; }
+  .dup-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 14px; border-radius: 12px; background: rgba(226,166,74,.14); border: 1px solid rgba(226,166,74,.5); color: #ffe3b0; font-size: 14px; font-weight: 600; }
+  .sidebar-version { font-size: 10px; color: var(--text-muted); opacity: .8; margin: 4px 0 12px; letter-spacing: .5px; }
+  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 560px) { .edit-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -541,6 +545,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
+    <div class="sidebar-version">Versión 18 nov · editar</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -643,6 +648,10 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <div class="card">
       <div class="card-eyebrow">LISTA GENERAL</div>
       <div class="card-title">Registro de asistentes</div>
+      <div id="dup-banner" class="dup-banner" style="display:none;">
+        <span id="dup-banner-txt"></span>
+        <button class="primary" onclick="unirDuplicados()">🔗 Unir ahora</button>
+      </div>
       <div class="search-row">
         <input type="text" id="search" placeholder="Buscar por DNI, nombre o distrito..." oninput="renderTable()" onkeydown="onSearchKeydown(event)" autocomplete="off" />
         <span class="dni-badge">DNI</span>
@@ -688,7 +697,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       </div>
       <input type="file" id="excel-input" class="file-hidden" accept=".xlsx,.xls,.csv" onchange="loadExcel(event)" />
       <p class="muted">Puedes subir un Excel con <b>varias hojas</b> (por ejemplo «Delegados generales» y «Delegados regulares»): se leen todas las que tengan encabezados <code>Nombre</code> y <code>DNI</code>. Columnas: <code>N°</code>, <code>Nombre</code>, <code>Apellidos</code>, <code>DNI</code>, <code>Zona</code>, <code>Distrito</code>, <code>Fase etaria</code>, <code>Sexo</code> y <code>Tipo</code> (opcional: el tipo se toma del nombre de la hoja o de títulos como «Invitados» dentro de la hoja). Si una persona ya existe (mismo DNI), solo se completan sus datos: <b>su QR y su asistencia no cambian</b>. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
-      <p class="muted" id="excel-status"></p>
+      <p class="muted" id="excel-status" style="white-space: pre-line;"></p>
     </div>
     <div class="card">
       <div class="card-eyebrow">REPARAR</div>
@@ -1015,6 +1024,27 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
   </div>
 </div>
 
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="modal" style="max-width:560px; max-height:92vh; overflow-y:auto;">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <div class="modal-eyebrow">EDITAR REGISTRO</div>
+    <div class="modal-title" id="edit-titulo">Editar persona</div>
+    <div class="modal-desc">Corrige los datos aquí mismo. <b>El QR, la foto y la asistencia no cambian.</b></div>
+    <div class="edit-grid">
+      <div class="field-group"><label class="field-label">Nombre</label><input type="text" id="ed-nombre"></div>
+      <div class="field-group"><label class="field-label">Apellidos</label><input type="text" id="ed-apellidos"></div>
+      <div class="field-group"><label class="field-label">DNI</label><input type="text" id="ed-dni" inputmode="numeric" placeholder="8 dígitos"></div>
+      <div class="field-group"><label class="field-label">Sexo</label><select id="ed-sexo"><option value="">Sin especificar</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
+      <div class="field-group"><label class="field-label">Fase etaria</label><select id="ed-fase"><option value="">Sin especificar</option><option value="Adulto">Adulto</option><option value="Joven">Joven</option></select></div>
+      <div class="field-group"><label class="field-label">Zona</label><select id="ed-zona"><option value="">Sin zona</option><option value="0">Zona 0</option><option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option><option value="4">Zona 4</option><option value="5">Zona 5</option><option value="6">Zona 6</option><option value="7">Zona 7</option></select></div>
+      <div class="field-group"><label class="field-label">Distrito</label><input type="text" id="ed-distrito"></div>
+      <div class="field-group"><label class="field-label">Tipo</label><select id="ed-tipo"><option value="">Sin clasificar</option><option value="general">Delegado general</option><option value="regular">Delegado regular</option><option value="adicional">Delegado adicional</option><option value="invitado">Invitado</option><option value="institucion">Invitado de institución</option></select></div>
+    </div>
+    <button class="primary" style="width:100%;" onclick="saveEditPerson()">Guardar cambios</button>
+    <p class="muted" id="ed-status" style="margin-top:10px; margin-bottom:0;"></p>
+  </div>
+</div>
+
 <div class="print-badges" id="print-badges"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1110,7 +1140,7 @@ let scanning = false;
 let scannerInstance = null;
 let lastScan = { text: '', time: 0 };
 
-function dniLabel(a) { return String(a.dni).startsWith('SD-') ? (a.dniReal || 'Sin DNI') : a.dni; }
+function dniLabel(a) { return a.dniReal || (String(a.dni).startsWith('SD-') ? 'Sin DNI' : a.dni); }
 function tieneZona(a) { return a.zona !== undefined && a.zona !== null && String(a.zona).trim() !== ''; }
 
 // Para buscar: ignora tildes, mayúsculas, espacios dobles y confusiones comunes de escritura
@@ -1174,7 +1204,7 @@ function openFoto(dni) {
   fotoDni = dni;
   document.getElementById('foto-grande').innerHTML = a.foto ? '<img src="' + a.foto + '" alt="">' : escapeHtml(initials(a));
   document.getElementById('foto-nombre').textContent = fullName(a);
-  document.getElementById('foto-zona').textContent = (tieneZona(a) ? 'Zona ' + a.zona : 'Sin zona') + ' · ' + (String(a.dni).startsWith('SD-') ? (a.dniReal ? 'DNI ' + a.dniReal : 'Sin DNI') : 'DNI ' + a.dni);
+  document.getElementById('foto-zona').textContent = (tieneZona(a) ? 'Zona ' + a.zona : 'Sin zona') + ' · ' + (a.dniReal ? 'DNI ' + a.dniReal : String(a.dni).startsWith('SD-') ? 'Sin DNI' : 'DNI ' + a.dni);
   document.getElementById('foto-quitar').style.display = a.foto ? '' : 'none';
   document.getElementById('foto-msg').textContent = '';
   document.getElementById('foto-overlay').classList.add('open');
@@ -1798,7 +1828,7 @@ function renderDelegSearch() {
       <div>
         ${avatarHtml(a, 44, true)}
         <div class="result-name">${escapeHtml(fullName(a))} ${tieneZona(a) ? '- Zona ' + escapeHtml(String(a.zona)) : '- sin zona'}</div>
-        <div class="result-dni">${String(a.dni).startsWith('SD-') ? (a.dniReal ? 'DNI ' + escapeHtml(a.dniReal) : 'Sin DNI') : 'DNI ' + escapeHtml(a.dni)}</div>
+        <div class="result-dni">${a.dniReal ? 'DNI ' + escapeHtml(a.dniReal) : String(a.dni).startsWith('SD-') ? 'Sin DNI' : 'DNI ' + escapeHtml(a.dni)}</div>
       </div>
       ${esDelegado(a)
         ? `<button class="btn-checkin" style="background:transparent; color:${c.color}; border:2px solid ${c.color};" onclick="toggleDelegado('${a.dni}')">✓ Delegado de ${c.corto} (quitar)</button>`
@@ -1940,6 +1970,7 @@ function setFilter(filter) {
 
 function renderTable() {
   renderFiltros();
+  actualizarBannerDup();
   const q = buscable(document.getElementById('search').value);
   let rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
@@ -2003,6 +2034,7 @@ function renderTable() {
         ? `<button class="row-action-btn desmarcar" onclick="toggleCheckIn('${a.dni}')">Desmarcar</button>`
         : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}
         <button class="row-action-btn" title="Imprimir solo el QR de esta persona" onclick="printCredentials('${a.dni}')">🖨 QR</button>
+        <button class="row-action-btn" title="Editar nombre, DNI, fase etaria, sexo…" onclick="openEditModal('${a.dni}')">✏</button>
         <button class="row-action-btn desmarcar" title="Eliminar a esta persona de la lista" onclick="deletePerson('${a.dni}')">🗑</button></div></td>
     </tr>
   `).join('');
@@ -2153,16 +2185,85 @@ async function saveModalPerson() {
   }
 }
 
-async function unirDuplicados() {
-  const st = document.getElementById('dup-status');
-  const clave = x => normalize((x.nombre || '') + ' ' + (x.apellidos || '')).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+// Dos nombres «compatibles»: mismas palabras, o uno es el otro con algún nombre/apellido de más
+// (ej. «Roberto Rosillo Ubillús» y «Roberto Alipio Rosillo Ubillus»). Ignora tildes y orden.
+function tokensNombre(x) { return normalize((x.nombre || '') + ' ' + (x.apellidos || '')).split(/[^a-z0-9]+/).filter(Boolean); }
+function nombresCompatibles(ta, tb) {
+  const cor = ta.length <= tb.length ? ta : tb, lar = ta.length <= tb.length ? tb : ta;
+  if (cor.length < 2) return false;
+  return cor.every(t => lar.includes(t));
+}
+function paresDuplicados() {
   const esSD = a => String(a.dni).startsWith('SD-');
   const sd = attendees.filter(a => esSD(a) && !a.dniReal), conDni = attendees.filter(a => !esSD(a));
-  const cuentaSD = {}; sd.forEach(a => { const k = clave(a); cuentaSD[k] = (cuentaSD[k] || 0) + 1; });
-  const porClave = {}; conDni.forEach(a => { const k = clave(a); (porClave[k] = porClave[k] || []).push(a); });
+  const tS = new Map(sd.map(a => [a.dni, tokensNombre(a)])), tC = new Map(conDni.map(a => [a.dni, tokensNombre(a)]));
   const pares = [];
-  sd.forEach(s0 => { const k = clave(s0); const l = porClave[k]; if (l && l.length === 1 && cuentaSD[k] === 1) pares.push([s0, l[0]]); });
-  if (!pares.length) { st.textContent = 'No se encontraron duplicados para unir. ✔'; return; }
+  sd.forEach(s0 => {
+    const cands = conDni.filter(p => nombresCompatibles(tS.get(s0.dni), tC.get(p.dni)));
+    if (cands.length !== 1) return;
+    const inversos = sd.filter(x => nombresCompatibles(tS.get(x.dni), tC.get(cands[0].dni)));
+    if (inversos.length === 1) pares.push([s0, cands[0]]);
+  });
+  return pares;
+}
+function actualizarBannerDup() {
+  const b = document.getElementById('dup-banner');
+  if (!b) return;
+  const n = paresDuplicados().length;
+  b.style.display = n ? 'flex' : 'none';
+  if (n) document.getElementById('dup-banner-txt').textContent = '⚠ Hay ' + n + ' personas repetidas: una sin DNI (la antigua, con su QR) y otra con DNI (del Excel nuevo). Únelas para que cada persona salga una sola vez, con todos sus datos.';
+}
+let editDni = null;
+function openEditModal(dni) {
+  const a = attendees.find(x => x.dni === dni);
+  if (!a) return;
+  editDni = dni;
+  const esSD = String(a.dni).startsWith('SD-');
+  document.getElementById('edit-titulo').textContent = fullName(a);
+  document.getElementById('ed-nombre').value = a.nombre || '';
+  document.getElementById('ed-apellidos').value = a.apellidos || '';
+  document.getElementById('ed-dni').value = a.dniReal || (esSD ? '' : a.dni);
+  document.getElementById('ed-sexo').value = a.sexo || '';
+  document.getElementById('ed-fase').value = (a.fase === 'Adulto' || a.fase === 'Joven') ? a.fase : '';
+  document.getElementById('ed-zona').value = tieneZona(a) ? String(a.zona) : '';
+  document.getElementById('ed-distrito').value = a.distrito || '';
+  document.getElementById('ed-tipo').value = a.tipo || '';
+  document.getElementById('ed-status').textContent = '';
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+function closeEditModal() { document.getElementById('edit-modal-overlay').classList.remove('open'); editDni = null; }
+async function saveEditPerson() {
+  const a = attendees.find(x => x.dni === editDni);
+  const st = document.getElementById('ed-status');
+  if (!a) { closeEditModal(); return; }
+  const nombre = document.getElementById('ed-nombre').value.replace(/\s+/g, ' ').trim();
+  const apellidos = document.getElementById('ed-apellidos').value.replace(/\s+/g, ' ').trim();
+  if (!nombre) { st.textContent = 'El nombre no puede quedar vacío.'; return; }
+  const dniNuevo = limpiarDni(document.getElementById('ed-dni').value);
+  const esSD = String(a.dni).startsWith('SD-');
+  const dniActual = a.dniReal || (esSD ? '' : a.dni);
+  if (dniNuevo && dniNuevo !== dniActual) {
+    const otro = attendees.find(x => x.dni !== a.dni && (x.dni === dniNuevo || x.dniReal === dniNuevo));
+    if (otro) { st.textContent = '⚠ Ese DNI ya lo tiene ' + fullName(otro) + '. Revisa el número.'; return; }
+    if (dniNuevo.length !== 8 && !window.confirm('El DNI tiene ' + dniNuevo.length + ' dígitos (lo normal son 8). ¿Guardarlo igual?')) return;
+  }
+  const data = { nombre, apellidos, sexo: document.getElementById('ed-sexo').value, zona: document.getElementById('ed-zona').value,
+    distrito: document.getElementById('ed-distrito').value.replace(/\s+/g, ' ').trim(), fase: document.getElementById('ed-fase').value, tipo: document.getElementById('ed-tipo').value };
+  // El identificador interno (y por tanto el QR) NUNCA cambia: el DNI corregido se guarda como dato aparte.
+  if (dniNuevo && dniNuevo !== (esSD ? '' : a.dni)) data.dniReal = dniNuevo;
+  else if (dniNuevo && !esSD && dniNuevo === a.dni) data.dniReal = '';
+  else if (!dniNuevo && esSD) data.dniReal = '';
+  try {
+    await setDoc(doc(asistentesCol, a.dni), data, { merge: true });
+    closeEditModal();
+  } catch (e) { st.textContent = '⚠️ No se pudo guardar. ' + (e && e.message ? e.message : e); }
+}
+window.openEditModal = openEditModal; window.closeEditModal = closeEditModal; window.saveEditPerson = saveEditPerson;
+
+async function unirDuplicados() {
+  const st = document.getElementById('dup-status');
+  const pares = paresDuplicados();
+  if (!pares.length) { st.textContent = 'No se encontraron duplicados para unir. ✔'; window.alert('No se encontraron duplicados para unir. ✔'); return; }
   const muestra = pares.slice(0, 12).map(p => '• ' + fullName(p[0]) + '  →  DNI ' + p[1].dni).join('\n');
   if (!window.confirm('Se encontraron ' + pares.length + ' personas duplicadas (una sin DNI y otra con DNI).\n\nSe unirán conservando el QR, la foto y el número del registro antiguo, y se eliminará el registro repetido.\n\n' + muestra + (pares.length > 12 ? '\n… y ' + (pares.length - 12) + ' más' : '') + '\n\n¿Continuar?')) { st.textContent = 'Cancelado, no se cambió nada.'; return; }
   st.textContent = 'Uniendo...';
@@ -2181,6 +2282,7 @@ async function unirDuplicados() {
       await batch.commit();
     }
     st.textContent = '✔ Listo: se unieron ' + pares.length + ' personas. Sus QR y fotos antiguos se conservaron.';
+    window.alert('✔ Listo: se unieron ' + pares.length + ' personas. Sus QR y fotos antiguos se conservaron.');
   } catch (e) { st.textContent = '⚠️ No se pudo completar: ' + (e && e.message ? e.message : e); }
 }
 window.unirDuplicados = unirDuplicados;
@@ -2256,6 +2358,9 @@ function buildNewRows(rows) {
   const existentes = new Set(attendees.map(a => a.dni));
   const vistosEnEsteArchivo = new Set();
   const reclamados = new Set();
+  const conflictos = [];
+  const dniDueno = new Map();
+  const mismaPersona = (ta, tb) => { const A = ta.split(' ').filter(Boolean), B = tb.split(' ').filter(Boolean); const comunes = A.filter(t => B.includes(t)).length; return comunes >= Math.min(2, A.length, B.length); };
   const claveDe = x => normalize((x.nombre || '') + ' ' + (x.apellidos || '')).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
   const newRows = [];
   let siguienteNumero = nextNumero();
@@ -2278,12 +2383,27 @@ function buildNewRows(rows) {
     // misma persona, recibe el mismo código y no se duplica.
     const claveTok = normalize(nombre + ' ' + apellidos).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
     let dniReal = '';
+    // Mismo DNI para dos personas distintas (error de tipeo en el Excel): la segunda NO pisa a la primera;
+    // se carga sin DNI para que no se pierda, y se avisa al terminar.
+    if (dni) {
+      let choque = null;
+      const dueno = dniDueno.get(dni);
+      if (dueno && !mismaPersona(dueno.clave, claveTok)) choque = dueno.nombre;
+      else {
+        const enBD = attendees.find(x => x.dni === dni || x.dniReal === dni);
+        if (enBD && !mismaPersona(claveDe(enBD), claveTok)) choque = fullName(enBD);
+      }
+      if (choque) { conflictos.push({ nombre: (nombre + ' ' + apellidos).trim(), dni, con: choque }); dni = ''; }
+      else if (!dueno) dniDueno.set(dni, { clave: claveTok, nombre: (nombre + ' ' + apellidos).trim() });
+    }
     if (dni) {
       // ¿Esta persona ya está registrada con código SD (antes no tenía DNI)? Se reutiliza ese registro: conserva su QR, número y foto.
       const porDniReal = attendees.find(x => x.dniReal === dni);
-      if (porDniReal && !existentes.has(dni)) { dniReal = dni; dni = porDniReal.dni; }
+      if (porDniReal && porDniReal.dni !== dni) { dniReal = dni; dni = porDniReal.dni; }
       else if (!existentes.has(dni)) {
-        const cand = attendees.filter(x => String(x.dni).startsWith('SD-') && !x.dniReal && !reclamados.has(x.dni) && claveDe(x) === claveTok);
+        const libres = attendees.filter(x => String(x.dni).startsWith('SD-') && !x.dniReal && !reclamados.has(x.dni));
+        let cand = libres.filter(x => claveDe(x) === claveTok);
+        if (!cand.length) { const tNuevo = claveTok.split(' '); cand = libres.filter(x => nombresCompatibles(tokensNombre(x), tNuevo)); }
         if (cand.length === 1) { dniReal = dni; dni = cand[0].dni; reclamados.add(dni); }
       }
     }
@@ -2308,7 +2428,7 @@ function buildNewRows(rows) {
       newRows.push({ dni, nombre, apellidos, sexo, zona, tipo, distrito, fase, dniReal });
     }
   });
-  return { newRows, skipped, updated };
+  return { newRows, skipped, updated, conflictos };
 }
 
 async function loadBulk() {
@@ -2343,11 +2463,12 @@ async function loadBulk() {
       zona: headerIdx.zona !== undefined ? parts[headerIdx.zona] : (esEncabezado ? '' : parts[4])
     };
   });
-  const { newRows, skipped, updated } = buildNewRows(rows);
+  const { newRows, skipped, updated, conflictos } = buildNewRows(rows);
   statusEl.textContent = 'Guardando...';
   try {
     await saveNewRows(newRows);
-    statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos (sin DNI/nombre o repetidos en el archivo).`;
+    statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos (sin DNI/nombre o repetidos en el archivo).` +
+      (conflictos.length ? '\n⚠ DNI repetido (cargados sin DNI): ' + conflictos.map(c => c.nombre + ' (' + c.dni + ') = ' + c.con).join('; ') : '');
     document.getElementById('bulk-input').value = '';
   } catch (e) {
     statusEl.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e);
@@ -2440,14 +2561,15 @@ function loadExcel(event) {
         rows = rawRows.slice(start).filter(r => r && r.length && (h.num === undefined || Number(r[h.num]) >= 1)).map(r => aFila(r, h, conEnc));
       }
 
-      const { newRows, skipped, updated } = buildNewRows(rows);
+      const { newRows, skipped, updated, conflictos } = buildNewRows(rows);
       statusEl.textContent = 'Guardando...';
       await saveNewRows(newRows);
       const porTipo = {}; newRows.forEach(x => { const t = TIPOS.find(y => y.k === x.tipo); const n = t ? t.label : 'Sin clasificar'; porTipo[n] = (porTipo[n] || 0) + 1; });
       statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos (sin nombre o repetidos entre hojas). ` +
         (hojasLeidas.length ? 'Hojas leídas: ' + hojasLeidas.join(', ') + '. ' : '') +
         (hojasOmitidas.length ? 'Hojas sin encabezado DNI/Nombre (ignoradas): ' + hojasOmitidas.join(', ') + '. ' : '') +
-        'Por tipo: ' + Object.keys(porTipo).map(k => k + ' ' + porTipo[k]).join(' · ') + '.';
+        'Por tipo: ' + Object.keys(porTipo).map(k => k + ' ' + porTipo[k]).join(' · ') + '.' +
+        (conflictos.length ? '\n\n⚠ DNI REPETIDO EN EL EXCEL (' + conflictos.length + '): estas personas se cargaron SIN DNI porque su número es el mismo que el de otra persona. Corrige el DNI en el Excel y vuelve a importar:\n' + conflictos.map(c => '• ' + c.nombre + ' (DNI ' + c.dni + ') — mismo DNI que ' + c.con).join('\n') : '');
     } catch (err) {
       statusEl.textContent = '⚠️ No se pudo leer o guardar el archivo. Detalle: ' + (err && err.message ? err.message : err);
     }
@@ -2554,7 +2676,7 @@ function exportExcel() {
     .slice()
     .sort((a, b) => fullName(a).localeCompare(fullName(b)))
     .map(a => ({
-      DNI: String(a.dni).startsWith('SD-') ? (a.dniReal || '') : a.dni,
+      DNI: a.dniReal || (String(a.dni).startsWith('SD-') ? '' : a.dni),
       Nombre: a.nombre,
       Apellidos: a.apellidos || '',
       Tipo: (TIPOS.find(t => t.k === a.tipo) || {}).label || '',
