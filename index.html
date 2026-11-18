@@ -545,7 +545,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 18 nov · encuadre</div>
+    <div class="sidebar-version">Versión 18 nov · buscar galería</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -775,6 +775,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="gal-fila gal-acciones">
         <button onclick="galDescargarPDF(false)">⬇ PDF de esta hoja</button>
         <button class="celeste" onclick="galDescargarPDF(true)">⬇ PDF de todas las zonas</button>
+        <input type="search" id="gal-buscar" placeholder="🔍 Buscar por nombre..." autocomplete="off" oninput="renderGaleria()" style="flex:1; min-width:200px; max-width:320px;" />
         <span class="muted" id="gal-pdf-estado"></span>
       </div>
     </div>
@@ -1599,6 +1600,8 @@ function renderFase() {
 }
 window.feSet = feSet; window.feSel = feSel; window.feLimpiar = feLimpiar;
 
+function galQuery() { const e = document.getElementById('gal-buscar'); return e ? buscable(e.value).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(Boolean) : []; }
+function coincideBusq(nombre) { const q = galQuery(); if (!q.length) return true; const n = buscable(nombre).replace(/[^a-z0-9 ]/g, ' '); return q.every(w => n.includes(w)); }
 function renderGaleria() {
   const grid = document.getElementById('gal-grid');
   if (!grid) return;
@@ -1616,14 +1619,21 @@ function renderGaleria() {
 
   let items;
   if (tab.manual) {
-    const gs = galeria.filter(g => g.grupo === tab.k).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    const gs = galeria.filter(g => g.grupo === tab.k && coincideBusq(g.nombre)).sort((a, b) => (a.ts || 0) - (b.ts || 0));
     items = gs.map(g => '<div class="gal-card" style="cursor:pointer;" onclick="openGal(\'' + g.id + '\')"><div class="avatar gal-foto">' +
       (g.foto ? '<img src="' + g.foto + '" alt="">' : escapeHtml(inicNombre(g.nombre))) + '</div><div class="gal-nombre">' + escapeHtml(g.nombre) + '</div></div>');
   } else {
-    const ps = galPersonas(tab).sort((a, b) => fullName(a).localeCompare(fullName(b)));
+    const ps = galPersonas(tab).filter(a => coincideBusq(fullName(a))).sort((a, b) => fullName(a).localeCompare(fullName(b)));
     items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>');
   }
   document.getElementById('gal-total').textContent = items.length;
+  const q = galQuery();
+  if (q && !items.length) {
+    const otros = GAL_TABS.filter(t => t.k !== tab.k && galItemsDe(t).some(i => coincideBusq(i.nombre)));
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Nadie con «' + escapeHtml(document.getElementById('gal-buscar').value.trim()) + '» en este grupo.' +
+      (otros.length ? ' Sí aparece en: ' + otros.map(t => '<a href="#" style="color:var(--celeste);font-weight:700;" onclick="galSel(\'' + t.k + '\');return false;">' + escapeHtml(t.corto || t.t) + '</a>').join(', ') + '.' : '') + '</div>';
+    return;
+  }
   grid.innerHTML = items.length ? items.join('') :
     '<div class="empty" style="grid-column:1/-1;">' + (tab.manual ? 'Todavía no hay nadie aquí. Agrega personas con el formulario de arriba.' : 'No hay personas en este grupo todavía.') + '</div>';
 }
@@ -2836,7 +2846,7 @@ window.deletePerson = deletePerson;
 window.openFoto = openFoto;
 window.galDescargarPDF = galDescargarPDF;
 window.eliminarDesdeFoto = eliminarDesdeFoto;
-window.galSel = galSel;
+window.galSel = galSel; window.renderGaleria = renderGaleria;
 window.galElegirFoto = galElegirFoto;
 window.galAgregar = galAgregar;
 window.galLote = galLote;
