@@ -396,6 +396,17 @@
   #splash .carga-barra { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #3fc8ff, #bff2ff); box-shadow: 0 0 1.4cqw rgba(80,210,255,.8); }
   @media (prefers-reduced-motion: reduce) { #splash .capa, #splash .fx, #splash .particulas i { animation: none; } }
   @keyframes latido { 0%,100% { box-shadow: 0 0 1.8cqw rgba(40,200,255,0.35), inset 0 0 1.2cqw rgba(120,225,255,0.2); } 50% { box-shadow: 0 0 3.2cqw rgba(40,200,255,0.65), inset 0 0 1.2cqw rgba(120,225,255,0.3); } }
+  .filtros-box { display: flex; flex-direction: column; gap: 10px; margin: 2px 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: rgba(120,180,230,0.05); }
+  .filtros-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filtros-fila .filter-chips { margin: 0; flex-wrap: wrap; }
+  .filtros-lbl { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: var(--text-muted); min-width: 58px; }
+  .filtros-fila select { width: auto; min-width: 170px; padding: 7px 10px; font-size: 13px; }
+  .chip .n { margin-left: 6px; font-size: 11px; opacity: .75; }
+  .chip.tipo-act { background: var(--tc, #4fb8e6); border-color: var(--tc, #4fb8e6); color: #04142e; font-weight: 700; }
+  .tipo-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid; white-space: nowrap; }
+  .fase-titulo { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 800; padding-bottom: 12px; margin-bottom: 18px; border-bottom: 2px solid; letter-spacing: .5px; }
+  .fase-titulo .cnt { font-size: 14px; font-weight: 800; padding: 2px 12px; border-radius: 999px; background: rgba(120,180,230,.18); color: var(--text); }
+  #view-fase .gal-pill { background: rgba(120,180,230,0.06); }
 </style>
 </head>
 <body>
@@ -470,6 +481,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <div class="nav-group">
       <div class="nav-pill amarillo">GALERÍA</div>
       <div class="nav-item" onclick="switchTab('galeria'); closeMobileMenu()">🖼 Delegados con foto</div>
+      <div class="nav-item" onclick="switchTab('fase'); closeMobileMenu()">👥 Fase etaria</div>
     </div>
 
     <div class="nav-group">
@@ -549,7 +561,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="card-eyebrow">LISTA GENERAL</div>
       <div class="card-title">Registro de asistentes</div>
       <div class="search-row">
-        <input type="text" id="search" placeholder="Buscar por DNI o nombre..." oninput="renderTable()" onkeydown="onSearchKeydown(event)" autocomplete="off" />
+        <input type="text" id="search" placeholder="Buscar por DNI, nombre o distrito..." oninput="renderTable()" onkeydown="onSearchKeydown(event)" autocomplete="off" />
         <span class="dni-badge">DNI</span>
         <button class="primary" id="scan-btn" onclick="toggleScanner()">📷 Escanear QR</button>
       </div>
@@ -560,10 +572,20 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
         <div class="chip" id="chip-in" onclick="setFilter('in')">Presentes</div>
         <div class="chip" id="chip-out" onclick="setFilter('out')">Por llegar</div>
       </div>
+      <div class="filtros-box">
+        <div class="filtros-fila"><span class="filtros-lbl">TIPO</span><div class="filter-chips" id="filtros-tipo"></div></div>
+        <div class="filtros-fila">
+          <span class="filtros-lbl">FILTRAR</span>
+          <select id="f-zona" onchange="onFiltroSel()"><option value="">Todas las zonas</option><option value="0">Zona 0</option><option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option><option value="4">Zona 4</option><option value="5">Zona 5</option><option value="6">Zona 6</option><option value="7">Zona 7</option><option value="sin">Sin zona</option></select>
+          <select id="f-distrito" onchange="onFiltroSel()"><option value="">Todos los distritos</option></select>
+          <select id="f-fase" onchange="onFiltroSel()"><option value="">Adultos y jóvenes</option><option value="Adulto">Adultos</option><option value="Joven">Jóvenes</option></select>
+          <button onclick="limpiarFiltros()">Quitar filtros</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Zona</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
+            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Tipo</th><th>Zona</th><th>Distrito</th><th>Fase etaria</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -582,7 +604,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
         <button onclick="openAddModal()">+ Agregar persona</button>
       </div>
       <input type="file" id="excel-input" class="file-hidden" accept=".xlsx,.xls,.csv" onchange="loadExcel(event)" />
-      <p class="muted">Columnas esperadas: <code>nombre</code>, <code>apellidos</code>, <code>dni</code>, <code>zona</code> (0 al 7) y <code>sexo</code> (M/F o Masculino/Femenino) — todas opcionales excepto nombre y dni, con encabezado en la primera fila. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
+      <p class="muted">Puedes subir un Excel con <b>varias hojas</b> (por ejemplo «Delegados generales» y «Delegados regulares»): se leen todas las que tengan encabezados <code>Nombre</code> y <code>DNI</code>. Columnas: <code>N°</code>, <code>Nombre</code>, <code>Apellidos</code>, <code>DNI</code>, <code>Zona</code>, <code>Distrito</code>, <code>Fase etaria</code>, <code>Sexo</code> y <code>Tipo</code> (opcional: el tipo se toma del nombre de la hoja o de títulos como «Invitados» dentro de la hoja). Si una persona ya existe (mismo DNI), solo se completan sus datos: <b>su QR y su asistencia no cambian</b>. <a href="#" onclick="downloadTemplate();return false;">Descargar plantilla</a></p>
       <p class="muted" id="excel-status"></p>
     </div>
     <div class="card">
@@ -621,6 +643,21 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <button style="background: #b85d63; color: #fff4f4; border-color: #b85d63;" onclick="resetAllData()">🗑 Reiniciar lista completa</button>
       <p class="muted" id="reset-status" style="margin-top:10px; margin-bottom:0;"></p>
     </div>
+  </div>
+
+  <div id="view-fase" style="display:none;">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title"><span id="fe-titulo">Fase etaria</span> <span class="muted" style="font-size:16px;font-weight:600;">· <span id="fe-total">0</span> personas</span></div>
+      </div>
+    </div>
+    <div class="card gal-nav">
+      <div class="gal-fila"><div class="gal-etq">Fase etaria</div><div class="gal-pills" id="fe-p-fase"></div></div>
+      <div class="gal-fila"><div class="gal-etq">Sexo</div><div class="gal-pills" id="fe-p-sexo"></div></div>
+      <div class="gal-fila"><div class="gal-etq">Zona</div><div class="gal-pills" id="fe-p-zona"></div></div>
+      <div class="gal-fila"><div class="gal-etq">Tipo</div><div class="gal-pills" id="fe-p-tipo"></div></div>
+    </div>
+    <div id="fe-secciones"></div>
   </div>
 
   <div id="view-galeria" style="display:none;">
@@ -830,6 +867,29 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       </select>
     </div>
     <div class="field-group">
+      <label class="field-label">Tipo</label>
+      <select id="modal-tipo">
+        <option value="">Sin clasificar</option>
+        <option value="general">Delegado general</option>
+        <option value="regular">Delegado regular</option>
+        <option value="adicional">Delegado adicional</option>
+        <option value="invitado">Invitado</option>
+        <option value="institucion">Invitado de institución</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Distrito</label>
+      <input type="text" id="modal-distrito" placeholder="Ej. Huaraz Centro">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Fase etaria</label>
+      <select id="modal-fase">
+        <option value="">Sin especificar</option>
+        <option value="Adulto">Adulto</option>
+        <option value="Joven">Joven</option>
+      </select>
+    </div>
+    <div class="field-group">
       <label class="field-label">Zona</label>
       <select id="modal-zona">
         <option value="">Sin zona</option>
@@ -877,6 +937,67 @@ const quorumDocRef = doc(db, "config", "quorum");
 
 let attendees = [];
 let currentFilter = 'all';
+const TIPOS = [
+  { k: 'general',     label: 'Delegados generales',    corto: 'General',     color: '#e2a64a' },
+  { k: 'regular',     label: 'Delegados regulares',    corto: 'Regular',     color: '#4fb8e6' },
+  { k: 'adicional',   label: 'Delegados adicionales',  corto: 'Adicional',   color: '#3dbf93' },
+  { k: 'invitado',    label: 'Invitados',              corto: 'Invitado',    color: '#b39cf5' },
+  { k: 'institucion', label: 'Invitados de instituciones', corto: 'Institución', color: '#e585a6' }
+];
+let filtroTipo = 'all', filtroZona = '', filtroDistrito = '', filtroFase = '';
+function parseTipo(v) {
+  const t = normalize(String(v == null ? '' : v)).replace(/\s+/g, ' ');
+  if (!t) return '';
+  if (t.includes('institu')) return 'institucion';
+  if (t.includes('adicional')) return 'adicional';
+  if (t.includes('general')) return 'general';
+  if (t.includes('invitad')) return 'invitado';
+  if (t.includes('regular') || t.includes('delegad')) return 'regular';
+  return '';
+}
+function parseFase(v) {
+  const raw = String(v == null ? '' : v).replace(/[\u00a0\u202f\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
+  const t = normalize(raw);
+  if (!t) return '';
+  if (t.includes('joven')) return 'Joven';
+  if (t.includes('adult')) return 'Adulto';
+  return raw;
+}
+function tipoBadge(a) {
+  const t = TIPOS.find(x => x.k === a.tipo);
+  if (!t) return '<span class="muted">—</span>';
+  return `<span class="tipo-badge" title="${t.label}" style="color:${t.color};border-color:${t.color}66;background:${t.color}1f;">${t.corto}</span>`;
+}
+function renderFiltros() {
+  const cont = document.getElementById('filtros-tipo');
+  if (!cont) return;
+  const cuenta = {}; attendees.forEach(a => { const k = a.tipo || 'sin'; cuenta[k] = (cuenta[k] || 0) + 1; });
+  const lista = [{ k: 'all', label: 'Todos', color: '#4fb8e6', n: attendees.length }]
+    .concat(TIPOS.map(t => ({ k: t.k, label: t.label, color: t.color, n: cuenta[t.k] || 0 })));
+  if (cuenta.sin) lista.push({ k: 'sin', label: 'Sin clasificar', color: '#94abc7', n: cuenta.sin });
+  cont.innerHTML = lista.map(t => `<div class="chip ${filtroTipo === t.k ? 'tipo-act' : ''}" style="--tc:${t.color}" onclick="setFiltroTipo('${t.k}')">${t.label}<span class="n">${t.n}</span></div>`).join('');
+  const sel = document.getElementById('f-distrito');
+  const distritos = Array.from(new Set(attendees.map(a => (a.distrito || '').trim()).filter(Boolean))).sort((x, y) => x.localeCompare(y, 'es'));
+  const firma = distritos.join('|');
+  if (sel.dataset.firma !== firma) {
+    sel.innerHTML = '<option value="">Todos los distritos</option>' + distritos.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    sel.dataset.firma = firma;
+  }
+  sel.value = filtroDistrito;
+}
+function setFiltroTipo(k) { filtroTipo = k; renderTable(); }
+function onFiltroSel() {
+  filtroZona = document.getElementById('f-zona').value;
+  filtroDistrito = document.getElementById('f-distrito').value;
+  filtroFase = document.getElementById('f-fase').value;
+  renderTable();
+}
+function limpiarFiltros() {
+  filtroTipo = 'all'; filtroZona = ''; filtroDistrito = ''; filtroFase = '';
+  document.getElementById('f-zona').value = ''; document.getElementById('f-fase').value = '';
+  document.getElementById('search').value = '';
+  setFilter('all');
+}
 let quorumMeta = 0;
 let scanning = false;
 let scannerInstance = null;
@@ -1055,6 +1176,7 @@ onSnapshot(asistentesCol, (snapshot) => {
   renderDelegList();
   renderProyDelegados();
   renderGaleria();
+  renderFase();
   document.getElementById('last-sync').innerHTML = '<span class="live-dot"></span>En vivo · ' + new Date().toLocaleTimeString();
 }, (err) => {
   showError('⚠️ No se pudo conectar a la base de datos. Revisa tu conexión. Detalle: ' + (err && err.message ? err.message : err));
@@ -1170,6 +1292,55 @@ function inicNombre(n) {
   return String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
 }
 function galSel(k) { galTab = k; renderGaleria(); }
+
+// --- Vista "Fase etaria": adultos / jóvenes, varones / mujeres, por zona o todas ---
+let feFase = 'all', feSexo = 'all', feZona = 'all', feTipo = 'all';
+function feSet(campo, v) { if (campo === 'fase') feFase = v; if (campo === 'sexo') feSexo = v; if (campo === 'zona') feZona = v; if (campo === 'tipo') feTipo = v; renderFase(); }
+function renderFase() {
+  const cont = document.getElementById('fe-secciones');
+  if (!cont) return;
+  const base = attendees.slice();
+  const pill = (campo, val, texto, n, col, act) => '<button class="gal-pill' + (act ? ' act' : '') + '" style="' + (act ? 'background:' + col + ';border-color:' + col + ';color:#04142e;' : 'color:' + col + ';') +
+    '" onclick="feSet(\'' + campo + '\',\'' + val + '\')">' + escapeHtml(texto) + '<span class="cnt">' + n + '</span></button>';
+  const pasa = (a, omitir) => (omitir === 'fase' || feFase === 'all' || (feFase === 'sin' ? !a.fase : a.fase === feFase)) &&
+    (omitir === 'sexo' || feSexo === 'all' || a.sexo === feSexo) &&
+    (omitir === 'zona' || feZona === 'all' || String(a.zona ?? '') === feZona) &&
+    (omitir === 'tipo' || feTipo === 'all' || (a.tipo || 'sin') === feTipo);
+  const cuenta = (omitir, f) => base.filter(a => pasa(a, omitir) && f(a)).length;
+  document.getElementById('fe-p-fase').innerHTML =
+    pill('fase', 'all', 'Adultos y jóvenes (separados)', cuenta('fase', () => true), '#4fb8e6', feFase === 'all') +
+    pill('fase', 'Adulto', 'Adultos', cuenta('fase', a => a.fase === 'Adulto'), '#4fb8e6', feFase === 'Adulto') +
+    pill('fase', 'Joven', 'Jóvenes', cuenta('fase', a => a.fase === 'Joven'), '#e2a64a', feFase === 'Joven') +
+    (base.some(a => !a.fase) ? pill('fase', 'sin', 'Sin fase etaria', cuenta('fase', a => !a.fase), '#94abc7', feFase === 'sin') : '');
+  document.getElementById('fe-p-sexo').innerHTML =
+    pill('sexo', 'all', 'Todos', cuenta('sexo', () => true), '#4fb8e6', feSexo === 'all') +
+    pill('sexo', 'M', 'Varones', cuenta('sexo', a => a.sexo === 'M'), '#4fb8e6', feSexo === 'M') +
+    pill('sexo', 'F', 'Mujeres', cuenta('sexo', a => a.sexo === 'F'), '#e585a6', feSexo === 'F');
+  document.getElementById('fe-p-zona').innerHTML = pill('zona', 'all', 'Todas las zonas', cuenta('zona', () => true), '#3dbf93', feZona === 'all') +
+    ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => pill('zona', z, z === '0' ? 'Zona 0' : 'Zona ' + z, cuenta('zona', a => String(a.zona ?? '') === z), '#3dbf93', feZona === z)).join('');
+  document.getElementById('fe-p-tipo').innerHTML = pill('tipo', 'all', 'Todos', cuenta('tipo', () => true), '#b39cf5', feTipo === 'all') +
+    TIPOS.map(t => pill('tipo', t.k, t.label, cuenta('tipo', a => a.tipo === t.k), '#b39cf5', feTipo === t.k)).join('') +
+    (base.some(a => !a.tipo) ? pill('tipo', 'sin', 'Sin clasificar', cuenta('tipo', a => !a.tipo), '#94abc7', feTipo === 'sin') : '');
+
+  const lista = base.filter(a => pasa(a, null)).sort((a, b) => fullName(a).localeCompare(fullName(b), 'es'));
+  const grupos = [
+    { t: 'Adultos', col: '#4fb8e6', items: lista.filter(a => a.fase === 'Adulto') },
+    { t: 'Jóvenes', col: '#e2a64a', items: lista.filter(a => a.fase === 'Joven') },
+    { t: 'Sin fase etaria', col: '#94abc7', items: lista.filter(a => a.fase !== 'Adulto' && a.fase !== 'Joven') }
+  ].filter(g => g.items.length);
+  const tarjeta = a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>';
+  cont.innerHTML = grupos.length ? grupos.map(g =>
+    '<div class="card"><div class="fase-titulo" style="color:' + g.col + ';border-color:' + g.col + '55;">' + g.t + '<span class="cnt">' + g.items.length + '</span></div>' +
+    '<div class="gal-grid">' + g.items.map(tarjeta).join('') + '</div></div>').join('') :
+    '<div class="card"><div class="empty">No hay personas con esos filtros. Si aún no cargaste el Excel con la fase etaria, importa la lista y aparecerán aquí.</div></div>';
+  const partes = ['Fase etaria'];
+  if (feZona !== 'all') partes.push('Zona ' + feZona);
+  if (feFase === 'Adulto') partes.push('Adultos'); else if (feFase === 'Joven') partes.push('Jóvenes');
+  if (feSexo === 'M') partes.push('Varones'); else if (feSexo === 'F') partes.push('Mujeres');
+  document.getElementById('fe-titulo').textContent = partes.join(' · ');
+  document.getElementById('fe-total').textContent = lista.length;
+}
+window.feSet = feSet;
 
 function renderGaleria() {
   const grid = document.getElementById('gal-grid');
@@ -1364,7 +1535,9 @@ function switchTab(tab) {
   document.getElementById('view-load').style.display = tab === 'load' ? 'block' : 'none';
   document.getElementById('view-delegados').style.display = tab === 'delegados' ? 'block' : 'none';
   document.getElementById('view-galeria').style.display = tab === 'galeria' ? 'block' : 'none';
+  document.getElementById('view-fase').style.display = tab === 'fase' ? 'block' : 'none';
   if (tab === 'galeria') renderGaleria();
+  if (tab === 'fase') renderFase();
   if (tab !== 'registro' && scanning) stopScanner();
   if (tab === 'registro') renderTable();
   if (tab === 'proyeccion') renderProyeccion();
@@ -1576,6 +1749,7 @@ function setFilter(filter) {
 }
 
 function renderTable() {
+  renderFiltros();
   const q = buscable(document.getElementById('search').value);
   let rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
@@ -1589,6 +1763,7 @@ function renderTable() {
         else if (nombre.startsWith(q)) score = 1;
         else if (dni.includes(q)) score = 2;
         else if (nombre.includes(q)) score = 3;
+        else if (buscable(a.distrito || '').includes(q)) score = 4;
         return { a, score };
       })
       .filter(x => x.score >= 0)
@@ -1598,6 +1773,10 @@ function renderTable() {
 
   if (currentFilter === 'in') rows = rows.filter(a => a.llego);
   if (currentFilter === 'out') rows = rows.filter(a => !a.llego);
+  if (filtroTipo !== 'all') rows = rows.filter(a => (a.tipo || 'sin') === filtroTipo);
+  if (filtroZona) rows = rows.filter(a => filtroZona === 'sin' ? !tieneZona(a) : String(a.zona) === filtroZona);
+  if (filtroDistrito) rows = rows.filter(a => (a.distrito || '').trim() === filtroDistrito);
+  if (filtroFase) rows = rows.filter(a => a.fase === filtroFase);
 
   const tbody = document.getElementById('table-body');
   const emptyEl = document.getElementById('table-empty');
@@ -1622,7 +1801,10 @@ function renderTable() {
         </div>
       </td>
       <td>${escapeHtml(dniLabel(a))}</td>
+      <td>${tipoBadge(a)}</td>
       <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
+      <td>${a.distrito ? escapeHtml(a.distrito) : '—'}</td>
+      <td>${a.fase ? escapeHtml(a.fase) : '—'}</td>
       <td><span class="sexo-tag" title="Click para corregir" onclick="cycleSexo('${a.dni}')">${a.sexo === 'M' ? '♂ M' : a.sexo === 'F' ? '♀ F' : '— '}</span></td>
       <td>${a.llego
         ? '<span class="badge presente"><span class="badge-dot"></span>Presente</span>'
@@ -1766,6 +1948,8 @@ async function saveModalPerson() {
   try {
     const esNuevo = !attendees.some(a => a.dni === dni);
     const data = { nombre, apellidos, sexo, zona };
+    const tipoM = document.getElementById('modal-tipo').value, distM = document.getElementById('modal-distrito').value.trim(), faseM = document.getElementById('modal-fase').value;
+    if (tipoM) data.tipo = tipoM; if (distM) data.distrito = distM; if (faseM) data.fase = faseM;
     if (esNuevo) { data.llego = false; data.hora = null; data.numero = nextNumero(); data.del_org = false; data.del_nom = false; data.del_pla = false; }
     await setDoc(doc(asistentesCol, dni), data, { merge: true });
     document.getElementById('modal-nombre').value = '';
@@ -1773,6 +1957,7 @@ async function saveModalPerson() {
     document.getElementById('modal-dni').value = '';
     document.getElementById('modal-sexo').value = '';
     document.getElementById('modal-zona').value = '';
+    document.getElementById('modal-tipo').value = ''; document.getElementById('modal-distrito').value = ''; document.getElementById('modal-fase').value = '';
     closeAddModal();
   } catch (e) {
     statusEl.textContent = '⚠️ Error al guardar: ' + (e && e.message ? e.message : e);
@@ -1787,6 +1972,10 @@ async function saveNewRows(rows) {
       // merge:true solo escribe estos campos — si la persona ya existe y ya
       // había marcado su llegada (llego/hora), esos datos NO se tocan ni se pierden.
       const data = { nombre: r.nombre, apellidos: r.apellidos || '', sexo: r.sexo || '', zona: r.zona || '' };
+      if (r.tipo) data.tipo = r.tipo;           // los datos nuevos solo se escriben si vienen llenos:
+      if (r.distrito) data.distrito = r.distrito; // un Excel sin esa columna nunca borra lo ya guardado
+      if (r.fase) data.fase = r.fase;
+      if (!r.zona) delete data.zona;
       if (r.numero) data.numero = r.numero; // solo se asigna número a los nuevos
       if (r.numero) { data.del_org = false; data.del_nom = false; data.del_pla = false; } // solo a los nuevos
       batch.set(doc(asistentesCol, r.dni), data, { merge: true });
@@ -1855,6 +2044,9 @@ function buildNewRows(rows) {
     else if (/^(f|femenino|mujer|dama)$/.test(sexoRaw.replace(/\./g, '').trim())) sexo = 'F';
     else sexo = guessSexo(nombre);
     const zona = parseZona(r.zona);
+    const tipo = parseTipo(r.tipo);
+    const distrito = (r.distrito == null ? '' : String(r.distrito)).replace(/[\u00a0\u202f\u200b]/g, ' ').replace(/\s+/g, ' ').trim();
+    const fase = parseFase(r.fase);
     if (!nombre) { skipped++; return; }
     // Sin DNI: se les crea un código interno fijo (SD-xxxx) a partir del nombre, para que igual
     // entren a la lista, se puedan elegir como delegados y tengan QR. Si se vuelve a importar la
@@ -1863,16 +2055,21 @@ function buildNewRows(rows) {
       const base = normalize(nombre + ' ' + apellidos).replace(/[^a-z0-9]/g, '');
       let h = 5381; for (let k = 0; k < base.length; k++) h = ((h * 33) ^ base.charCodeAt(k)) >>> 0;
       dni = 'SD-' + h.toString(36).toUpperCase();
+      // Si esa persona ya existe con código SD pero el Excel nuevo trae el nombre en otro orden
+      // (o repartido distinto entre Nombre y Apellidos), se reconoce igual y conserva su código y su QR.
+      const claveTokens = normalize(nombre + ' ' + apellidos).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+      const previo = attendees.find(x => String(x.dni).startsWith('SD-') && normalize((x.nombre || '') + ' ' + (x.apellidos || '')).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ') === claveTokens);
+      if (previo) dni = previo.dni;
     }
     if (vistosEnEsteArchivo.has(dni)) { skipped++; return; } // fila repetida dentro del mismo archivo
     vistosEnEsteArchivo.add(dni);
     const esNuevo = !existentes.has(dni);
     if (esNuevo) {
-      newRows.push({ dni, nombre, apellidos, sexo, zona, numero: siguienteNumero });
+      newRows.push({ dni, nombre, apellidos, sexo, zona, tipo, distrito, fase, numero: siguienteNumero });
       siguienteNumero++;
     } else {
       updated++;
-      newRows.push({ dni, nombre, apellidos, sexo, zona });
+      newRows.push({ dni, nombre, apellidos, sexo, zona, tipo, distrito, fase });
     }
   });
   return { newRows, skipped, updated };
@@ -1935,53 +2132,86 @@ function loadExcel(event) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      if (!rawRows.length) { statusEl.textContent = 'El archivo está vacío.'; return; }
 
-      const limpiarCab = c => normalize(String(c == null ? '' : c).replace(/[\u00a0\u202f\u200b]/g, ' ')).replace(/\s+/g, ' ');
-      const alias = { dni: ['dni', 'documento', 'nro dni', 'n dni'], nombre: ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'nombres y apellidos'], apellidos: ['apellidos', 'apellido'], sexo: ['sexo', 'genero'], zona: ['zona'], num: ['n', 'no', 'nro', 'numero', 'n°', 'nº', 'n.'] };
+      const limpiarCab = c => normalize(String(c == null ? '' : c).replace(/[  ​]/g, ' ')).replace(/\s+/g, ' ');
+      const alias = {
+        dni: ['dni', 'documento', 'nro dni', 'n dni'],
+        nombre: ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'nombres y apellidos'],
+        apellidos: ['apellidos', 'apellido'],
+        sexo: ['sexo', 'genero'],
+        zona: ['zona'],
+        distrito: ['distrito', 'distritos', 'distrito misionero'],
+        fase: ['fase etaria', 'fase', 'fase etarea', 'etapa', 'grupo etario'],
+        tipo: ['tipo', 'categoria', 'condicion', 'clase', 'tipo de delegado', 'tipo de asistente', 'tipo de invitado', 'rol', 'calidad'],
+        num: ['n', 'no', 'nro', 'numero', 'n°', 'nº', 'n.']
+      };
       const campoDe = c => Object.keys(alias).find(k => alias[k].includes(c));
+      const CAMPOS = ['dni', 'nombre', 'apellidos', 'sexo', 'zona', 'distrito', 'fase', 'tipo'];
+      const celda = (r, idx) => (idx === undefined ? '' : r[idx]);
+      const aFila = (r, h, conEnc) => {
+        const o = {};
+        CAMPOS.forEach((k, pos) => { o[k] = h[k] !== undefined ? r[h[k]] : (conEnc ? '' : (pos < 5 ? r[pos] : '')); });
+        return o;
+      };
 
-      let headerIdx = { dni: 0, nombre: 1, apellidos: 2, sexo: 3, zona: 4 };
-      let startRow = 0;
-      let conEncabezado = false;
-      // Busca la fila de encabezados entre las primeras 15 filas (puede haber un título arriba)
-      for (let i = 0; i < Math.min(15, rawRows.length); i++) {
-        const fila = (rawRows[i] || []).map(limpiarCab);
-        const campos = fila.map(campoDe).filter(Boolean);
-        if (campos.includes('dni') && campos.includes('nombre')) {
-          conEncabezado = true;
-          startRow = i + 1;
-          headerIdx = {};
-          // Solo la primera columna que coincida con cada campo (así "Edad" u otras nunca se confunden con DNI)
-          fila.forEach((c, idx) => { const k = campoDe(c); if (k && headerIdx[k] === undefined) headerIdx[k] = idx; });
-          break;
+      // Lee UNA hoja: busca la fila de encabezados (puede haber un título arriba), respeta el N° y
+      // detecta títulos de sección ("Delegados adicionales", "Invitados"...) para asignar el tipo.
+      const leerHoja = (nombreHoja, sheet) => {
+        const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        let hIdx = null, start = 0;
+        for (let i = 0; i < Math.min(15, rawRows.length); i++) {
+          const fila = (rawRows[i] || []).map(limpiarCab);
+          const campos = fila.map(campoDe).filter(Boolean);
+          if (campos.includes('dni') && campos.includes('nombre')) {
+            hIdx = {}; start = i + 1;
+            fila.forEach((c, idx) => { const k = campoDe(c); if (k && hIdx[k] === undefined) hIdx[k] = idx; });
+            break;
+          }
         }
-      }
-      if (!conEncabezado) {
+        if (!hIdx) return null;
+        const tipoHoja = parseTipo(nombreHoja);
+        let seccion = '';
+        const out = [];
+        rawRows.slice(start).forEach(r => {
+          r = r || [];
+          const llenas = r.filter(c => String(c == null ? '' : c).trim() !== '');
+          if (!llenas.length) return;
+          const textoFila = llenas.map(c => String(c)).join(' ');
+          if (llenas.length <= 2 && textoFila.length < 80 && !limpiarDni(celda(r, hIdx.dni)) && parseTipo(textoFila)) { seccion = parseTipo(textoFila); return; }
+          if (hIdx.num !== undefined && !(Number(r[hIdx.num]) >= 1)) return;
+          const f = aFila(r, hIdx, true);
+          f.tipo = parseTipo(f.tipo) || seccion || tipoHoja || '';
+          f._hoja = nombreHoja;
+          out.push(f);
+        });
+        return out;
+      };
+
+      let rows = [], hojasLeidas = [], hojasOmitidas = [];
+      workbook.SheetNames.forEach(nombreHoja => {
+        const res = leerHoja(nombreHoja, workbook.Sheets[nombreHoja]);
+        if (res === null) hojasOmitidas.push(nombreHoja);
+        else { rows = rows.concat(res); hojasLeidas.push(nombreHoja + ' (' + res.length + ')'); }
+      });
+
+      // Archivos antiguos / CSV sin encabezados reconocibles: se lee la primera hoja por posición de columna.
+      if (!hojasLeidas.length) {
+        const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+        if (!rawRows.length) { statusEl.textContent = 'El archivo está vacío.'; return; }
         const firstRow = (rawRows[0] || []).map(limpiarCab);
-        if (firstRow.some(c => campoDe(c))) {
-          conEncabezado = true; startRow = 1; headerIdx = {};
-          firstRow.forEach((c, idx) => { const k = campoDe(c); if (k && headerIdx[k] === undefined) headerIdx[k] = idx; });
-        }
+        let h = {}, conEnc = false, start = 0;
+        if (firstRow.some(c => campoDe(c))) { conEnc = true; start = 1; firstRow.forEach((c, idx) => { const k = campoDe(c); if (k && h[k] === undefined) h[k] = idx; }); }
+        rows = rawRows.slice(start).filter(r => r && r.length && (h.num === undefined || Number(r[h.num]) >= 1)).map(r => aFila(r, h, conEnc));
       }
-
-      // Si el Excel trae columna N° (1, 2, 3...), solo se leen las filas que tengan un número válido:
-      // así se ignoran títulos, encabezados repetidos y filas vacías o de notas.
-      const filasValidas = rawRows.slice(startRow).filter(r => headerIdx.num === undefined || (Number(r[headerIdx.num]) >= 1));
-      const rows = filasValidas.map(r => ({
-        dni: headerIdx.dni !== undefined ? r[headerIdx.dni] : (conEncabezado ? '' : r[0]),
-        nombre: headerIdx.nombre !== undefined ? r[headerIdx.nombre] : (conEncabezado ? '' : r[1]),
-        apellidos: headerIdx.apellidos !== undefined ? r[headerIdx.apellidos] : (conEncabezado ? '' : r[2]),
-        sexo: headerIdx.sexo !== undefined ? r[headerIdx.sexo] : (conEncabezado ? '' : r[3]),
-        zona: headerIdx.zona !== undefined ? r[headerIdx.zona] : (conEncabezado ? '' : r[4])
-      }));
 
       const { newRows, skipped, updated } = buildNewRows(rows);
       statusEl.textContent = 'Guardando...';
       await saveNewRows(newRows);
-      statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos.`;
+      const porTipo = {}; newRows.forEach(x => { const t = TIPOS.find(y => y.k === x.tipo); const n = t ? t.label : 'Sin clasificar'; porTipo[n] = (porTipo[n] || 0) + 1; });
+      statusEl.textContent = `${newRows.length - updated} nuevos, ${updated} actualizados, ${skipped} omitidos (sin nombre o repetidos entre hojas). ` +
+        (hojasLeidas.length ? 'Hojas leídas: ' + hojasLeidas.join(', ') + '. ' : '') +
+        (hojasOmitidas.length ? 'Hojas sin encabezado DNI/Nombre (ignoradas): ' + hojasOmitidas.join(', ') + '. ' : '') +
+        'Por tipo: ' + Object.keys(porTipo).map(k => k + ' ' + porTipo[k]).join(' · ') + '.';
     } catch (err) {
       statusEl.textContent = '⚠️ No se pudo leer o guardar el archivo. Detalle: ' + (err && err.message ? err.message : err);
     }
@@ -2057,12 +2287,21 @@ function printCredentials(soloDni) {
 
 function downloadTemplate() {
   if (typeof XLSX === 'undefined') return;
-  const ws = XLSX.utils.json_to_sheet([
-    { nombre: 'Juan', apellidos: 'Perez Diaz', dni: '12345678', zona: '1', sexo: 'M' },
-    { nombre: 'Maria', apellidos: 'Lopez Rios', dni: '87654321', zona: '3', sexo: 'F' }
-  ]);
+  const cab = ['N°', 'Nombre', 'Apellidos', 'DNI', 'Zona', 'Distrito', 'Fase etaria', 'Sexo'];
+  const mk = (filas, extra) => {
+    const head = extra ? cab.concat(['Tipo']) : cab;
+    const ws = XLSX.utils.aoa_to_sheet([head].concat(filas));
+    ws['!cols'] = head.map((h, i) => ({ wch: [5, 18, 24, 12, 7, 20, 12, 8, 24][i] }));
+    return ws;
+  };
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
+  XLSX.utils.book_append_sheet(wb, mk([[1, 'Juan', 'Perez Diaz', '12345678', '0', 'Huaraz Centro', 'Adulto', 'M']], false), 'Delegados generales');
+  XLSX.utils.book_append_sheet(wb, mk([
+    [1, 'María', 'Lopez Rios', '87654321', '3', 'Casma', 'Joven', 'F', 'Delegado regular'],
+    [2, 'Pedro', 'Ramos Soto', '11223344', '3', 'Casma', 'Adulto', 'M', 'Delegado adicional'],
+    [3, 'Ana', 'Torres Vega', '44332211', '5', 'Chimbote', 'Adulto', 'F', 'Invitado'],
+    [4, 'Luis', 'Diaz Pardo', '55667788', '', '', 'Adulto', 'M', 'Invitado de institución']
+  ], true), 'Delegados regulares');
   XLSX.writeFile(wb, 'plantilla_invitados.xlsx');
 }
 
@@ -2082,13 +2321,16 @@ function exportExcel() {
       DNI: String(a.dni).startsWith('SD-') ? '' : a.dni,
       Nombre: a.nombre,
       Apellidos: a.apellidos || '',
+      Tipo: (TIPOS.find(t => t.k === a.tipo) || {}).label || '',
       Zona: tieneZona(a) ? a.zona : '',
+      Distrito: a.distrito || '',
+      'Fase etaria': a.fase || '',
       Sexo: a.sexo || '',
       Estado: a.llego ? 'Presente' : 'Pendiente',
       Hora: a.hora || ''
     }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 22 }, { wch: 8 }, { wch: 10 }, { wch: 10 }];
+  ws['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 22 }, { wch: 24 }, { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
   const fecha = new Date().toISOString().slice(0, 10);
@@ -2120,6 +2362,7 @@ window.switchTab = switchTab;
 window.toggleMobileMenu = toggleMobileMenu;
 window.closeMobileMenu = closeMobileMenu;
 window.setFilter = setFilter;
+window.setFiltroTipo = setFiltroTipo; window.onFiltroSel = onFiltroSel; window.limpiarFiltros = limpiarFiltros;
 window.renderTable = renderTable;
 window.onSearchKeydown = onSearchKeydown;
 window.toggleCheckIn = toggleCheckIn;
