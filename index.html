@@ -545,7 +545,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 18 nov · editar</div>
+    <div class="sidebar-version">Versión 18 nov · encuadre</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -940,6 +940,25 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
   </div>
 </div>
 
+<div class="foto-overlay" id="enc-overlay" style="z-index:6000;">
+  <div class="foto-box">
+    <div class="fnombre" style="margin-bottom:4px;">Encuadrar foto</div>
+    <p class="muted" style="margin:0 0 10px;font-size:13px;">Arrastra la foto o usa los controles hasta que se vea la cabeza completa.</p>
+    <canvas id="enc-canvas" width="240" height="240" style="width:240px;height:240px;border-radius:50%;border:2px solid var(--celeste);touch-action:none;cursor:grab;background:#fff;display:block;margin:0 auto 12px;"></canvas>
+    <div style="text-align:left;font-size:13px;">
+      <label>Zoom <input type="range" id="enc-zoom" style="width:100%" oninput="encCambio()"></label>
+      <label>Izquierda ↔ derecha <input type="range" id="enc-x" min="0" max="100" style="width:100%" oninput="encCambio()"></label>
+      <label>Arriba ↕ abajo <input type="range" id="enc-y" min="0" max="100" style="width:100%" oninput="encCambio()"></label>
+    </div>
+    <div class="fbtns" style="margin-top:10px;">
+      <button onclick="encCompleta()">Foto completa</button>
+      <button onclick="encLlenar()">Llenar círculo</button>
+      <button class="celeste" onclick="encCerrar(true)">✓ Guardar</button>
+      <button onclick="encCerrar(false)">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="foto-overlay" id="foto-overlay" onclick="if(event.target===this)closeFoto()">
   <div class="foto-box">
     <div class="grande" id="foto-grande"></div>
@@ -1178,24 +1197,94 @@ function avatarHtml(a, size, clickable) {
     (clickable ? ' title="Ver / cambiar foto" onclick="openFoto(\'' + a.dni + '\')"' : '') + '>' + inner + '</div>';
 }
 
-// Reduce la foto a 200x200 (recortada al centro) y la devuelve como texto JPEG liviano (~10 KB)
-function reducirFoto(file) {
+// Dibuja la foto en un cuadrado SIEMPRE sobre fondo blanco (los PNG transparentes ya no salen negros).
+// zoom: 1 = llena el cuadro; menos de 1 = foto completa sin recortar. px/py: 0..1 posición del encuadre.
+const FOTO_T = 240;
+function dibujarFoto(ctx, img, T, zoom, px, py) {
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, T, T);
+  const base = Math.max(T / img.width, T / img.height);
+  const sc = base * zoom, dw = img.width * sc, dh = img.height * sc;
+  const x = dw > T ? -(dw - T) * px : (T - dw) / 2;
+  const y = dh > T ? -(dh - T) * py : (T - dh) / 2;
+  ctx.drawImage(img, x, y, dw, dh);
+}
+function cargarImg(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => {
-      const T = 200;
-      const c = document.createElement('canvas'); c.width = T; c.height = T;
-      const lado = Math.min(img.width, img.height);
-      const sx = (img.width - lado) / 2, sy = Math.max(0, (img.height - lado) / 3); // un poco hacia arriba: rostros
-      c.getContext('2d').drawImage(img, sx, sy, lado, lado, 0, 0, T, T);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', 0.75));
-    };
+    img.onload = () => { img._url = url; resolve(img); };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
     img.src = url;
   });
 }
+// Automático (subida masiva): llena el cuadro y alinea arriba para no cortar la cabeza
+async function reducirFoto(file) {
+  const img = await cargarImg(file);
+  const c = document.createElement('canvas'); c.width = FOTO_T; c.height = FOTO_T;
+  dibujarFoto(c.getContext('2d'), img, FOTO_T, 1, 0.5, 0.05);
+  URL.revokeObjectURL(img._url);
+  return c.toDataURL('image/jpeg', 0.8);
+}
+// Con ventana para encuadrar (foto individual): zoom, mover y "foto completa"
+let encImg = null, encSt = null, encResolver = null;
+function encuadrarFoto(file) {
+  return cargarImg(file).then(img => new Promise(resolve => {
+    encImg = img; encResolver = resolve;
+    encSt = { zoom: 1, px: 0.5, py: 0.05 };
+    encSt.minZoom = Math.min(img.width, img.height) / Math.max(img.width, img.height); // foto completa
+    const z = document.getElementById('enc-zoom');
+    z.min = encSt.minZoom.toFixed(2); z.max = 3; z.step = 0.01; z.value = 1;
+    document.getElementById('enc-x').value = 50; document.getElementById('enc-y').value = 5;
+    document.getElementById('enc-overlay').classList.add('open');
+    encPintar();
+  }));
+}
+function encPintar() {
+  if (!encImg) return;
+  const c = document.getElementById('enc-canvas');
+  dibujarFoto(c.getContext('2d'), encImg, c.width, encSt.zoom, encSt.px, encSt.py);
+}
+function encCambio() {
+  encSt.zoom = parseFloat(document.getElementById('enc-zoom').value);
+  encSt.px = document.getElementById('enc-x').value / 100;
+  encSt.py = document.getElementById('enc-y').value / 100;
+  encPintar();
+}
+function encCompleta() { document.getElementById('enc-zoom').value = encSt.minZoom; encCambio(); }
+function encLlenar() { document.getElementById('enc-zoom').value = 1; document.getElementById('enc-x').value = 50; document.getElementById('enc-y').value = 5; encCambio(); }
+function encCerrar(ok) {
+  const res = encResolver; encResolver = null;
+  let out = null;
+  if (ok && encImg) {
+    const c = document.createElement('canvas'); c.width = FOTO_T; c.height = FOTO_T;
+    dibujarFoto(c.getContext('2d'), encImg, FOTO_T, encSt.zoom, encSt.px, encSt.py);
+    out = c.toDataURL('image/jpeg', 0.8);
+  }
+  if (encImg) URL.revokeObjectURL(encImg._url);
+  encImg = null;
+  document.getElementById('enc-overlay').classList.remove('open');
+  if (res) res(out);
+}
+(function () { // arrastrar la foto con el dedo o el mouse
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    if (e.target.id !== 'enc-canvas' || !encImg) return;
+    drag = { x: e.clientX, y: e.clientY, px: encSt.px, py: encSt.py }; e.target.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag || !encImg) return;
+    const c = document.getElementById('enc-canvas'), r = c.getBoundingClientRect();
+    const sc = Math.max(c.width / encImg.width, c.height / encImg.height) * encSt.zoom;
+    const ex = encImg.width * sc - c.width, ey = encImg.height * sc - c.height;
+    const k = c.width / r.width;
+    if (ex > 0) encSt.px = Math.min(1, Math.max(0, drag.px - (e.clientX - drag.x) * k / ex));
+    if (ey > 0) encSt.py = Math.min(1, Math.max(0, drag.py - (e.clientY - drag.y) * k / ey));
+    document.getElementById('enc-x').value = Math.round(encSt.px * 100);
+    document.getElementById('enc-y').value = Math.round(encSt.py * 100);
+    encPintar();
+  });
+  document.addEventListener('pointerup', () => { drag = null; });
+})();
 
 let fotoDni = null;
 function openFoto(dni) {
@@ -1221,8 +1310,10 @@ async function guardarFotoIndividual(ev) {
   if (!file || !fotoDni) return;
   const msg = document.getElementById('foto-msg');
   try {
+    msg.textContent = 'Encuadra la foto...';
+    const dataUrl = await encuadrarFoto(file);
+    if (!dataUrl) { msg.textContent = ''; return; }
     msg.textContent = 'Guardando foto...';
-    const dataUrl = await reducirFoto(file);
     await setDoc(doc(asistentesCol, fotoDni), { foto: dataUrl }, { merge: true });
     msg.textContent = '✓ Foto guardada';
     const a = attendees.find(x => x.dni === fotoDni);
@@ -1543,7 +1634,7 @@ async function galElegirFoto(ev) {
   const f = ev.target.files[0]; ev.target.value = '';
   if (!f) return;
   const st = document.getElementById('gal-estado');
-  try { galFotoPend = await reducirFoto(f); st.textContent = '📷 Foto lista: ' + f.name; }
+  try { const d = await encuadrarFoto(f); if (!d) { st.textContent = ''; return; } galFotoPend = d; st.textContent = '📷 Foto lista: ' + f.name; }
   catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
 }
 async function galAgregar() {
@@ -1602,7 +1693,8 @@ async function galCambiarFoto(ev) {
   if (!f || !galEditId) return;
   const msg = document.getElementById('gal-edit-msg');
   try {
-    const foto = await reducirFoto(f);
+    const foto = await encuadrarFoto(f);
+    if (!foto) return;
     await setDoc(doc(galeriaCol, galEditId), { foto }, { merge: true });
     document.getElementById('gal-grande').innerHTML = '<img src="' + foto + '" alt="">';
     msg.textContent = '✓ Foto guardada';
@@ -2756,6 +2848,7 @@ window.galEliminar = galEliminar;
 window.closeFoto = closeFoto;
 window.quitarFoto = quitarFoto;
 window.guardarFotoIndividual = guardarFotoIndividual;
+window.encCambio = encCambio; window.encCompleta = encCompleta; window.encLlenar = encLlenar; window.encCerrar = encCerrar;
 window.subirFotosLote = subirFotosLote;
 </script>
 </body>
