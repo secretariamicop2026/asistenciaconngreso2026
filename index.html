@@ -415,6 +415,40 @@
   .fe-res-t { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }
   .fe-res-i { padding: 6px 14px; border-radius: 999px; background: rgba(120,180,230,.1); border: 1px solid var(--border); font-size: 14px; }
   .fe-res-i b { font-size: 17px; color: #7fd3f5; margin-right: 4px; }
+  /* Proyección de delegados: una sola pantalla, círculos con foto */
+  #proy-deleg-screen { padding: 18px 34px 14px; overflow: hidden; }
+  .pd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 10px; padding-right: 170px; }
+  .pd-brand { font-size: 28px; }
+  .pd-izq .proy-brand-sub { font-size: 14px; margin-top: 2px; }
+  .pd-centro { flex: 1; text-align: center; }
+  #proy-deleg-label { font-size: 34px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--pd-color, #7fd3f5); line-height: 1.1; }
+  .pd-der { text-align: right; }
+  .pd-der .proy-clock { font-size: 22px; margin: 0; }
+  .pd-count { margin-top: 4px; display: inline-block; padding: 3px 14px; border-radius: 999px; border: 1.5px solid var(--pd-color, #7fd3f5); background: rgba(120,180,230,.12); font-size: 24px; font-weight: 900; }
+  .pd-count small { font-size: 13px; font-weight: 700; opacity: .8; letter-spacing: .5px; }
+  #proy-deleg-screen .proy-back { top: 14px; right: 24px; }
+  #pd-cabezas { display: flex; justify-content: center; gap: clamp(30px, 8vw, 150px); margin-bottom: 4px; }
+  .pd-cab { text-align: center; max-width: 420px; }
+  .pd-cab .pd-av { width: var(--dh); height: var(--dh); border-width: 4px; margin: 0 auto 6px; box-shadow: 0 0 28px var(--pd-color, #5cc3ec); }
+  .pd-cab .pd-nombre { font-size: clamp(16px, 2.2vh, 26px); margin-top: 2px; }
+  .pd-rol { font-size: clamp(12px, 1.7vh, 18px); color: #ffe3a6; font-weight: 700; letter-spacing: .3px; }
+  .pd-grid { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; }
+  .pd-item { width: calc(100% / var(--c, 5)); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 3px 6px; box-sizing: border-box; }
+  .pd-av { width: var(--d, 110px); height: var(--d, 110px); border-radius: 50%; overflow: hidden; border: 3px solid var(--pd-color, #5cc3ec); background: #123a6b; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #9fdcf7; font-size: calc(var(--d, 110px) * .34); flex-shrink: 0; }
+  .pd-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pd-nombre { margin-top: 6px; font-size: clamp(12px, calc(var(--d, 110px) * .15), 24px); font-weight: 700; line-height: 1.15; color: #f2f8ff; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pd-zona { font-size: clamp(11px, calc(var(--d, 110px) * .12), 19px); color: #9fc3e6; font-weight: 600; margin-top: 2px; }
+  .pd-item.nuevo, .pd-cab { animation: pdPop .6s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: var(--delay, 0s); }
+  @keyframes pdPop { 0% { opacity: 0; transform: scale(.4) translateY(20px); } 100% { opacity: 1; transform: none; } }
+  /* Pantalla de asistencia: encabezado centrado e íconos */
+  .proy-top-centro { text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .proy-top-centro .proy-live { justify-content: center; }
+  .quorum-block { position: relative; }
+  .quorum-ico { position: absolute; left: 44px; top: 50%; transform: translateY(-50%); width: 120px; height: 120px; opacity: .9; }
+  .proy-stat { display: flex; align-items: center; gap: 20px; }
+  .proy-ico { width: 64px; height: 64px; flex-shrink: 0; color: #eaf6ff; opacity: .92; }
+  .proy-stat-body { min-width: 0; }
+  @media (max-width: 700px) { .quorum-ico { display: none; } .proy-ico { width: 44px; height: 44px; } }
 </style>
 </head>
 <body>
@@ -496,14 +530,12 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="nav-pill rojo">ELEGIR DELEGADOS</div>
       <div class="nav-item" onclick="abrirComision('org'); closeMobileMenu()">🔹 Comisión Organizadora</div>
       <div class="nav-item" onclick="abrirComision('nom'); closeMobileMenu()">🔸 Comisión de Nombramientos</div>
-      <div class="nav-item" onclick="abrirComision('pla'); closeMobileMenu()">🟢 Comisión de Planes</div>
     </div>
 
     <div class="nav-group">
       <div class="nav-pill verde">PROYECTAR DELEGADOS</div>
       <div class="nav-item" onclick="proyectarComision('org'); closeMobileMenu()">📊 Organizadora</div>
       <div class="nav-item" onclick="proyectarComision('nom'); closeMobileMenu()">📊 Nombramientos</div>
-      <div class="nav-item" onclick="proyectarComision('pla'); closeMobileMenu()">📊 Planes</div>
     </div>
   </div>
 
@@ -709,7 +741,6 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <div id="com-chips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
       <button class="com-chip" id="comchip-org" onclick="abrirComision('org')">Organizadora</button>
       <button class="com-chip" id="comchip-nom" onclick="abrirComision('nom')">Nombramientos</button>
-      <button class="com-chip" id="comchip-pla" onclick="abrirComision('pla')">Planes</button>
     </div>
     <div id="deleg-banner" class="com-banner"></div>
 
@@ -752,7 +783,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
 
 <div class="proy-screen" id="proy-screen">
   <button class="proy-back" onclick="switchTab('registro')">← Volver al registro</button>
-  <div class="proy-top">
+  <div class="proy-top proy-top-centro">
     <div class="proy-brand">CONGRESO <span>2026</span></div>
     <div class="proy-brand-sub">Misión Centro-Oeste del Perú · Pantalla de asistencia en vivo</div>
     <div class="proy-clock" id="proy-clock">--:--:--</div>
@@ -760,6 +791,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
   </div>
 
   <div class="quorum-block rojo" id="quorum-block">
+    <svg class="proy-ico quorum-ico" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="22" r="9"/><path d="M14 54c0-10 8-17 18-17s18 7 18 17"/><circle cx="11" cy="27" r="6"/><path d="M2 47c0-7 4-11 10-11"/><circle cx="53" cy="27" r="6"/><path d="M62 47c0-7-4-11-10-11"/></svg>
     <div class="quorum-label">Quórum</div>
     <div class="quorum-num" id="quorum-num">0 / 0</div>
     <div class="quorum-meta" id="quorum-meta">Meta no definida</div>
@@ -767,57 +799,56 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
   </div>
 
   <div class="proy-grid">
-    <div class="proy-stat celeste">
-      <div class="proy-stat-label">Registrados</div>
-      <div class="proy-stat-num" id="proy-total">0</div>
+<div class="proy-stat celeste">
+      <svg class="proy-ico" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="10" width="38" height="48" rx="6"/><rect x="24" y="5" width="16" height="10" rx="3"/><path d="M23 35l7 7 12-14"/></svg>
+      <div class="proy-stat-body">
+        <div class="proy-stat-label">Registrados</div>
+        <div class="proy-stat-num" id="proy-total">0</div>
+      </div>
     </div>
-    <div class="proy-stat verde">
-      <div class="proy-stat-label">Presentes</div>
-      <div class="proy-stat-num" id="proy-in">0</div>
-      <div class="proy-stat-sub" id="proy-pct">0% de avance</div>
+<div class="proy-stat verde">
+      <svg class="proy-ico" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="26"/><path d="M19 33l9 9 17-19"/></svg>
+      <div class="proy-stat-body">
+        <div class="proy-stat-label">Presentes</div>
+        <div class="proy-stat-num" id="proy-in">0</div>
+        <div class="proy-stat-sub" id="proy-pct">0% de avance</div>
+      </div>
     </div>
-    <div class="proy-stat celeste">
-      <div class="proy-stat-label">Varones</div>
-      <div class="proy-stat-num" id="proy-hombres">0 / 0</div>
-      <div class="proy-stat-sub">presentes / registrados</div>
+<div class="proy-stat celeste">
+      <svg class="proy-ico" viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="11" r="8"/><rect x="17" y="23" width="30" height="21" rx="9"/><rect x="21" y="39" width="10" height="22" rx="4"/><rect x="33" y="39" width="10" height="22" rx="4"/></svg>
+      <div class="proy-stat-body">
+        <div class="proy-stat-label">Varones</div>
+        <div class="proy-stat-num" id="proy-hombres">0 / 0</div>
+        <div class="proy-stat-sub">presentes / registrados</div>
+      </div>
     </div>
-    <div class="proy-stat rojo-suave">
-      <div class="proy-stat-label">Mujeres</div>
-      <div class="proy-stat-num" id="proy-mujeres">0 / 0</div>
-      <div class="proy-stat-sub">presentes / registradas</div>
+<div class="proy-stat rojo-suave">
+      <svg class="proy-ico" viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="11" r="8"/><path d="M32 23c-6 0-10.500 3-12 8.500L13 54h38l-7-22.500C42.500 26 38 23 32 23z"/><rect x="25" y="52" width="6" height="10" rx="3"/><rect x="33" y="52" width="6" height="10" rx="3"/></svg>
+      <div class="proy-stat-body">
+        <div class="proy-stat-label">Mujeres</div>
+        <div class="proy-stat-num" id="proy-mujeres">0 / 0</div>
+        <div class="proy-stat-sub">presentes / registradas</div>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="proy-screen" id="proy-deleg-screen">
   <button class="proy-back" onclick="abrirComision()">← Volver a elegir</button>
-  <div class="proy-top">
-    <div class="proy-brand">CONGRESO <span>2026</span></div>
-    <div class="proy-brand-sub" id="proy-deleg-sub">Misión Centro-Oeste del Perú · Lista de delegados en vivo</div>
-    <div class="proy-clock" id="proy-deleg-clock">--:--:--</div>
-    <div class="proy-live"><span class="live-dot"></span>En vivo</div>
-  </div>
-
-  <div class="quorum-block verde" id="proy-deleg-block" style="margin-bottom: 20px;">
-    <div class="quorum-label" id="proy-deleg-label">Delegados elegidos</div>
-    <div class="quorum-num" id="proy-deleg-total">0</div>
-  </div>
-
-  <div class="card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15);">
-    <div class="table-wrap" style="max-height: none;">
-      <table>
-        <thead>
-          <tr>
-            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">N°</th>
-            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">Nombre del delegado</th>
-            <th style="color: rgba(255,255,255,0.7); font-size: 18px; padding: 14px;">Zona</th>
-          </tr>
-        </thead>
-        <tbody id="proy-deleg-list"></tbody>
-      </table>
-      <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px;">Todavía no se ha elegido a nadie</div>
+  <div class="pd-top">
+    <div class="pd-izq">
+      <div class="proy-brand pd-brand">CONGRESO <span>2026</span></div>
+      <div class="proy-brand-sub" id="proy-deleg-sub">Misión Centro-Oeste del Perú</div>
+    </div>
+    <div class="pd-centro"><div id="proy-deleg-label">Comisión Organizadora</div></div>
+    <div class="pd-der">
+      <div class="proy-clock" id="proy-deleg-clock">--:--:--</div>
+      <div class="pd-count"><span id="proy-deleg-total">0</span> <small>delegados</small></div>
     </div>
   </div>
+  <div id="pd-cabezas"></div>
+  <div class="pd-grid" id="pd-grid"></div>
+  <div class="empty" id="proy-deleg-empty" style="color: rgba(255,255,255,0.6); font-size: 20px; text-align:center;">Todavía no se ha elegido a nadie</div>
 </div>
 
 
@@ -1209,7 +1240,7 @@ const GAL_TABS = [
   { k: 'z1', t: 'Zona 1', zona: '1' }, { k: 'z2', t: 'Zona 2', zona: '2' }, { k: 'z3', t: 'Zona 3', zona: '3' },
   { k: 'z4', t: 'Zona 4', zona: '4' }, { k: 'z5', t: 'Zona 5', zona: '5' }, { k: 'z6', t: 'Zona 6', zona: '6' },
   { k: 'z7', t: 'Zona 7', zona: '7' },
-  { k: 'gen', t: 'Delegados generales', corto: 'Delegados generales', zona: '0', color: '#e0ae62' },
+  { k: 'gen', t: 'Delegados generales (Zona 0)', corto: 'Zona 0 · Delegados generales', zona: '0', color: '#e0ae62' },
   { k: 'mis', t: 'Obreros con credencial misionera', corto: 'Credencial misionera', manual: true, color: '#5dc7a1' },
   { k: 'min', t: 'Pastores con credencial ministerial', corto: 'Credencial ministerial', manual: true, color: '#b39cf5' },
   { k: 'lic', t: 'Pastores con licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' }
@@ -1332,7 +1363,7 @@ function renderFase() {
   llenar('fe-s-fase', feFase, [['all', 'Todas (adultos y jóvenes)'], ['Adulto', 'Adultos (' + cuenta('fase', a => a.fase === 'Adulto') + ')'], ['Joven', 'Jóvenes (' + cuenta('fase', a => a.fase === 'Joven') + ')']]
     .concat(base.some(a => !a.fase) ? [['sin', 'Sin fase etaria (' + cuenta('fase', a => !a.fase) + ')']] : []));
   llenar('fe-s-sexo', feSexo, [['all', 'Todos (varones y mujeres)'], ['M', 'Varones (' + cuenta('sexo', a => a.sexo === 'M') + ')'], ['F', 'Mujeres (' + cuenta('sexo', a => a.sexo === 'F') + ')']]);
-  llenar('fe-s-zona', feZona, [['all', 'Todas las zonas']].concat(['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, 'Zona ' + z + ' (' + cuenta('zona', a => String(a.zona ?? '') === z) + ')'])));
+  llenar('fe-s-zona', feZona, [['all', 'Todas las zonas']].concat(['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, (z === '0' ? 'Zona 0 · Delegados generales' : 'Zona ' + z) + ' (' + cuenta('zona', a => String(a.zona ?? '') === z) + ')'])));
   llenar('fe-s-tipo', feTipo, [['all', 'Todos los tipos']].concat(TIPOS.map(t => [t.k, t.label + ' (' + cuenta('tipo', a => a.tipo === t.k) + ')']))
     .concat(base.some(a => !a.tipo) ? [['sin', 'Sin clasificar (' + cuenta('tipo', a => !a.tipo) + ')']] : []));
 
@@ -1372,8 +1403,8 @@ function renderGaleria() {
     return '<button class="gal-pill' + (act ? ' act' : '') + '" style="' + (act ? 'background:' + col + ';border-color:' + col + ';' : 'color:' + (x.color || '#b9d9f5') + ';') + '" onclick="galSel(\'' + x.k + '\')">' +
       escapeHtml(x.corto || x.t) + '<span class="cnt">' + n + '</span></button>';
   };
-  document.getElementById('gal-tabs-zonas').innerHTML = GAL_TABS.filter(x => /^z\d$/.test(x.k)).map(pill).join('');
-  document.getElementById('gal-tabs-otros').innerHTML = GAL_TABS.filter(x => !/^z\d$/.test(x.k)).map(pill).join('');
+  document.getElementById('gal-tabs-zonas').innerHTML = GAL_TABS.filter(x => x.k === 'gen').concat(GAL_TABS.filter(x => /^z\d$/.test(x.k))).map(pill).join('');
+  document.getElementById('gal-tabs-otros').innerHTML = GAL_TABS.filter(x => !/^z\d$/.test(x.k) && x.k !== 'gen').map(pill).join('');
   document.getElementById('gal-titulo').textContent = tab.t;
   document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
 
@@ -1611,8 +1642,7 @@ function renderProyeccion() {
 
 const COMISIONES = {
   org: { campo: 'del_org', nombre: 'Comisión Organizadora',   corto: 'Organizadora',   color: '#4fb0dd' },
-  nom: { campo: 'del_nom', nombre: 'Comisión de Nombramientos', corto: 'Nombramientos', color: '#d9a252' },
-  pla: { campo: 'del_pla', nombre: 'Comisión de Planes',       corto: 'Planes',         color: '#4db995' }
+  nom: { campo: 'del_nom', nombre: 'Comisión de Nombramientos', corto: 'Nombramientos', color: '#d9a252' }
 };
 let comActual = 'org';
 
@@ -1624,6 +1654,7 @@ function abrirComision(key) {
 }
 function proyectarComision(key) {
   if (key) comActual = key;
+  pdPrev = null;
   switchTab('proy-delegados');
 }
 
@@ -1695,7 +1726,7 @@ async function toggleDelegado(dni) {
   if (!person) return;
   const campo = COMISIONES[comActual].campo;
   try {
-    await setDoc(doc(asistentesCol, dni), { [campo]: !person[campo] }, { merge: true });
+    await setDoc(doc(asistentesCol, dni), { [campo]: !person[campo], [campo + '_ts']: !person[campo] ? Date.now() : null }, { merge: true });
     renderDelegSearch();
   } catch (e) {
     showError('⚠️ No se pudo actualizar. ' + (e && e.message ? e.message : e));
@@ -1731,34 +1762,79 @@ function renderDelegList() {
   `).join('');
 }
 
+const CABEZAS = {
+  org: [
+    { nombre: 'Pr. Daniel Montalbán', rol: 'Presidente de la Unión Peruana del Norte', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) },
+    { nombre: 'Pr. Alberto Carranza', rol: 'Presidente de la MiCOP', ini: 'AC', match: n => n.includes('alberto') && n.includes('carranza') }
+  ]
+};
+let pdPrev = null;   // qué ya se mostró, para animar solo a los nuevos
+function pdZonaTxt(a) { return tieneZona(a) ? (String(a.zona) === '0' ? 'Delegado general' : 'Zona ' + a.zona) : ''; }
+function delegadosProy(key, excluirDnis) {
+  const campo = COMISIONES[key].campo;
+  return attendees.filter(a => a[campo] && !excluirDnis.has(a.dni)).sort((a, b) => {
+    const ta = a[campo + '_ts'] || 0, tb = b[campo + '_ts'] || 0;
+    if (ta !== tb) return ta - tb;      // los que ya estaban primero, luego en el orden en que se van eligiendo
+    const za = tieneZona(a) ? String(a.zona) : 'zzz', zb = tieneZona(b) ? String(b.zona) : 'zzz';
+    if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
+    return fullName(a).localeCompare(fullName(b));
+  });
+}
 function renderProyDelegados() {
   const c = COMISIONES[comActual];
-  const delegados = delegadosDe(comActual);
-  const totalEl = document.getElementById('proy-deleg-total');
-  const listEl = document.getElementById('proy-deleg-list');
-  const emptyEl = document.getElementById('proy-deleg-empty');
-  if (!totalEl) return;
-  const sub = document.getElementById('proy-deleg-sub');
-  if (sub) sub.textContent = 'Misión Centro-Oeste del Perú · ' + c.nombre;
-  const lbl = document.getElementById('proy-deleg-label');
-  if (lbl) lbl.textContent = 'Delegados · ' + c.nombre;
-  const blk = document.getElementById('proy-deleg-block');
-  if (blk) { blk.style.background = 'linear-gradient(155deg, ' + c.color + '55 0%, #0a2347 100%)'; blk.style.borderColor = c.color; }
-  totalEl.textContent = delegados.length;
-  if (delegados.length === 0) {
-    listEl.innerHTML = '';
-    emptyEl.style.display = 'block';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  listEl.innerHTML = delegados.map((a, i) => `
-    <tr>
-      <td><span class="num-badge">${i + 1}</span></td>
-      <td><div style="display:flex;align-items:center;gap:18px;">${avatarHtml(a, 72, false)}<span>${escapeHtml(fullName(a))}</span></div></td>
-      <td>${tieneZona(a) ? 'Zona ' + escapeHtml(String(a.zona)) : '—'}</td>
-    </tr>
-  `).join('');
+  const grid = document.getElementById('pd-grid');
+  if (!grid) return;
+  const scr = document.getElementById('proy-deleg-screen');
+  scr.style.setProperty('--pd-color', c.color);
+  const sub = document.getElementById('proy-deleg-sub'); if (sub) sub.textContent = 'Misión Centro-Oeste del Perú';
+  document.getElementById('proy-deleg-label').textContent = c.nombre;
+
+  // Cabezas de la comisión (solo Organizadora): se buscan en la lista por nombre
+  const defs = CABEZAS[comActual] || [];
+  const cabezas = defs.map(d => ({ d, a: attendees.find(x => d.match(normalize(fullName(x)))) }));
+  const excl = new Set(cabezas.filter(x => x.a).map(x => x.a.dni));
+  const delegados = delegadosProy(comActual, excl);
+  document.getElementById('proy-deleg-total').textContent = delegados.length + cabezas.length;
+
+  const primera = !pdPrev || pdPrev.key !== comActual;
+  const vistos = primera ? new Set() : pdPrev.set;
+  const nuevoSet = new Set();
+  const dh = Math.max(90, Math.min(140, Math.round(window.innerHeight * 0.125)));
+  document.getElementById('pd-cabezas').style.setProperty('--dh', dh + 'px');
+  document.getElementById('pd-cabezas').innerHTML = cabezas.map((x, i) =>
+    '<div class="pd-cab" style="--delay:' + (i * 0.25) + 's;"><div class="pd-av">' + (x.a && x.a.foto ? '<img src="' + x.a.foto + '" alt="">' : escapeHtml(x.d.ini)) + '</div>' +
+    '<div class="pd-nombre">' + escapeHtml(x.d.nombre) + '</div><div class="pd-rol">' + escapeHtml(x.d.rol) + '</div></div>').join('');
+
+  let k = 0;
+  grid.innerHTML = delegados.map(a => {
+    nuevoSet.add(a.dni);
+    const esNuevo = !vistos.has(a.dni);
+    const delay = primera ? Math.min(k++ * 0.05, 3) : 0;
+    return '<div class="pd-item' + (esNuevo ? ' nuevo' : '') + '" style="--delay:' + delay + 's;"><div class="pd-av">' +
+      (a.foto ? '<img src="' + a.foto + '" alt="">' : escapeHtml(initials(a))) + '</div><div class="pd-nombre">' + escapeHtml(fullName(a)) +
+      '</div><div class="pd-zona">' + escapeHtml(pdZonaTxt(a)) + '</div></div>';
+  }).join('');
+  pdPrev = { key: comActual, set: nuevoSet };
+  document.getElementById('proy-deleg-empty').style.display = (delegados.length + cabezas.length) === 0 ? 'block' : 'none';
+  pdAjustar();
 }
+// Elige cuántas columnas y qué tamaño de círculo hacen que TODOS entren en la pantalla, sin deslizar.
+function pdAjustar() {
+  const grid = document.getElementById('pd-grid');
+  if (!grid || !document.getElementById('proy-deleg-screen').classList.contains('open')) return;
+  const n = grid.children.length;
+  if (!n) return;
+  const W = grid.clientWidth, H = grid.clientHeight;
+  let mejor = { d: 0, c: 1 };
+  for (let c = 1; c <= 16; c++) {
+    const filas = Math.ceil(n / c);
+    const d = Math.min((W / c) * 0.8, (H / filas - 12) / 1.75, 200);
+    if (d > mejor.d + 0.5) mejor = { d, c };
+  }
+  grid.style.setProperty('--c', mejor.c);
+  grid.style.setProperty('--d', Math.max(40, Math.floor(mejor.d)) + 'px');
+}
+window.addEventListener('resize', () => { try { pdAjustar(); } catch (e) {} });
 
 function setFilter(filter) {
   currentFilter = filter;
