@@ -545,7 +545,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 18 nov · buscar galería</div>
+    <div class="sidebar-version">Versión 18 nov · buscar 2</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -775,7 +775,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="gal-fila gal-acciones">
         <button onclick="galDescargarPDF(false)">⬇ PDF de esta hoja</button>
         <button class="celeste" onclick="galDescargarPDF(true)">⬇ PDF de todas las zonas</button>
-        <input type="search" id="gal-buscar" placeholder="🔍 Buscar por nombre..." autocomplete="off" oninput="renderGaleria()" style="flex:1; min-width:200px; max-width:320px;" />
+        <input type="text" id="gal-buscar" placeholder="Buscar por nombre..." autocomplete="off" oninput="renderGaleria()" style="width:230px; padding:7px 12px; font-size:13px;" />
         <span class="muted" id="gal-pdf-estado"></span>
       </div>
     </div>
