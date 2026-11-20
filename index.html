@@ -547,7 +547,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 19 nov · límite y ajuste</div>
+    <div class="sidebar-version">Versión 20 nov · reporte Excel</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -667,6 +667,13 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
         <div class="chip" id="chip-out" onclick="setFilter('out')">Por llegar</div>
       </div>
       <div class="filtros-box">
+        <div class="filtros-fila">
+          <span class="filtros-lbl">EXCEL</span>
+          <button onclick="exportAsistencia('presentes')">⬇ Los que llegaron</button>
+          <button onclick="exportAsistencia('faltan')">⬇ Los que NO llegaron</button>
+          <button onclick="exportAsistencia('filtrado')">⬇ Lo que veo ahora</button>
+          <button class="primary" onclick="exportAsistencia('completo')">⬇ Reporte completo</button>
+        </div>
         <div class="filtros-fila"><span class="filtros-lbl">TIPO</span><div class="filter-chips" id="filtros-tipo"></div></div>
         <div class="filtros-fila">
           <span class="filtros-lbl">FILTRAR</span>
@@ -2992,6 +2999,7 @@ const quorumDocRef = doc(db, "config", "quorum");
 
 let attendees = [];
 let currentFilter = 'all';
+let ultimasFilas = [];
 const TIPOS = [
   { k: 'general',     label: 'Delegados generales',    corto: 'General',     color: '#e2a64a' },
   { k: 'regular',     label: 'Delegados regulares',    corto: 'Regular',     color: '#4fb8e6' },
@@ -4160,6 +4168,7 @@ function renderTable() {
   if (filtroDistrito) rows = rows.filter(a => (a.distrito || '').trim() === filtroDistrito);
   if (filtroFase) rows = rows.filter(a => a.fase === filtroFase);
 
+  ultimasFilas = rows;
   const tbody = document.getElementById('table-body');
   const emptyEl = document.getElementById('table-empty');
   document.getElementById('table-footer').textContent = 'Mostrando ' + rows.length + ' de ' + attendees.length + ' personas';
@@ -4855,6 +4864,72 @@ function exportExcel() {
   const fecha = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(wb, `asistencia_${fecha}.xlsx`);
 }
+
+// --- Reporte de asistencia en Excel (llegaron / no llegaron / lo filtrado / completo) ---
+function filaExcel(a, i) {
+  return {
+    'N°': a.numero || i + 1,
+    DNI: a.dniReal || (String(a.dni).startsWith('SD-') ? '' : a.dni),
+    Nombre: a.nombre || '',
+    Apellidos: a.apellidos || '',
+    Tipo: (TIPOS.find(t => t.k === a.tipo) || {}).label || '',
+    Zona: tieneZona(a) ? (String(a.zona) === '0' ? '0 (Delegado general)' : a.zona) : '',
+    Distrito: a.distrito || '',
+    'Fase etaria': a.fase || '',
+    Sexo: a.sexo || '',
+    Estado: a.llego ? 'Presente' : 'No llegó',
+    'Hora de llegada': a.hora || ''
+  };
+}
+const COLS_EXCEL = [{ wch: 6 }, { wch: 12 }, { wch: 20 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 10 }, { wch: 11 }, { wch: 14 }];
+function hojaDe(lista) {
+  const ws = XLSX.utils.json_to_sheet(lista.map(filaExcel));
+  ws['!cols'] = COLS_EXCEL;
+  return ws;
+}
+function porZonaYNombre(a, b) {
+  const za = tieneZona(a) ? String(a.zona) : 'zzz', zb = tieneZona(b) ? String(b.zona) : 'zzz';
+  if (za !== zb) return za.localeCompare(zb, undefined, { numeric: true });
+  return fullName(a).localeCompare(fullName(b));
+}
+function exportAsistencia(modo) {
+  if (typeof XLSX === 'undefined') { alert('No se pudo cargar el módulo de Excel. Intenta de nuevo.'); return; }
+  if (!attendees.length) { alert('No hay datos para exportar todavía.'); return; }
+  const presentes = attendees.filter(a => a.llego).sort((a, b) => String(a.hora || '').localeCompare(String(b.hora || '')) || fullName(a).localeCompare(fullName(b)));
+  const faltan = attendees.filter(a => !a.llego).sort(porZonaYNombre);
+  const wb = XLSX.utils.book_new();
+  let nombre = '';
+  if (modo === 'presentes') { XLSX.utils.book_append_sheet(wb, hojaDe(presentes), 'Llegaron'); nombre = 'llegaron'; }
+  else if (modo === 'faltan') { XLSX.utils.book_append_sheet(wb, hojaDe(faltan), 'No llegaron'); nombre = 'no_llegaron'; }
+  else if (modo === 'filtrado') {
+    if (!ultimasFilas.length) { alert('No hay nadie en la lista que estás viendo.'); return; }
+    XLSX.utils.book_append_sheet(wb, hojaDe(ultimasFilas), 'Lista filtrada'); nombre = 'lista_filtrada';
+  } else {
+    const ahora = new Date();
+    const resumen = [
+      ['Reporte de asistencia · Congreso 2026'], ['Generado', ahora.toLocaleString('es-PE')], [],
+      ['Registrados', attendees.length], ['Presentes', presentes.length], ['No llegaron', faltan.length],
+      ['Avance', Math.round(presentes.length / attendees.length * 100) + '%'], [],
+      ['POR TIPO', 'Registrados', 'Presentes', 'No llegaron']
+    ];
+    const tipos = TIPOS.map(t => ({ label: t.label, k: t.k })).concat([{ label: 'Sin clasificar', k: 'sin' }]);
+    tipos.forEach(t => { const g = attendees.filter(a => (a.tipo || 'sin') === t.k); if (g.length) resumen.push([t.label, g.length, g.filter(a => a.llego).length, g.filter(a => !a.llego).length]); });
+    resumen.push([], ['POR ZONA', 'Registrados', 'Presentes', 'No llegaron']);
+    ['0', '1', '2', '3', '4', '5', '6', '7', 'sin'].forEach(z => {
+      const g = attendees.filter(a => z === 'sin' ? !tieneZona(a) : String(a.zona) === z);
+      if (g.length) resumen.push([z === 'sin' ? 'Sin zona' : z === '0' ? 'Zona 0 (Delegados generales)' : 'Zona ' + z, g.length, g.filter(a => a.llego).length, g.filter(a => !a.llego).length]);
+    });
+    const wr = XLSX.utils.aoa_to_sheet(resumen); wr['!cols'] = [{ wch: 32 }, { wch: 14 }, { wch: 12 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wr, 'Resumen');
+    XLSX.utils.book_append_sheet(wb, hojaDe(presentes), 'Llegaron');
+    XLSX.utils.book_append_sheet(wb, hojaDe(faltan), 'No llegaron');
+    XLSX.utils.book_append_sheet(wb, hojaDe(attendees.slice().sort(porZonaYNombre)), 'Todos');
+    nombre = 'reporte_completo';
+  }
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  XLSX.writeFile(wb, 'asistencia_' + nombre + '_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.xlsx');
+}
+window.exportAsistencia = exportAsistencia;
 
 function escapeHtml(s) {
   const d = document.createElement('div');
