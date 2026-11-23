@@ -411,7 +411,7 @@
   #view-fase .gal-pill { background: rgba(120,180,230,0.06); }
   .fe-selects { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
   .fe-campo { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 190px; }
-  .fe-campo span { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+  .fe-campo > span { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
   .fe-campo select { width: 100%; padding: 11px 12px; font-size: 15px; font-weight: 600; }
   .fe-resumen { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
   .fe-res-t { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }
@@ -482,11 +482,28 @@
   .pd-meta-fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .pd-meta-fila input { width: 110px; }
   /* Tabla de registro más compacta */
-  .fe-pct { display: flex; align-items: center; gap: 14px; padding: 8px 18px; border-radius: 16px; border: 1.5px solid #e2a64a; background: linear-gradient(160deg, rgba(226,166,74,.22), rgba(226,166,74,.06)); }
+  .fe-pct { margin-left: auto; display: flex; align-items: center; gap: 14px; padding: 8px 18px; border-radius: 16px; border: 1.5px solid #e2a64a; background: linear-gradient(160deg, rgba(226,166,74,.22), rgba(226,166,74,.06)); }
   .fe-pct .num { font-size: 40px; font-weight: 900; line-height: 1; color: #ffd98f; text-shadow: 0 0 14px rgba(226,166,74,.45); }
   .fe-pct .det { font-size: 13px; line-height: 1.35; color: #eaf4ff; }
   .fe-pct .det small { display: block; opacity: .75; font-size: 12px; }
   .fe-res-i em { font-style: normal; color: #ffd98f; font-weight: 800; margin-left: 4px; }
+  /* selector con varias opciones */
+  .ms { position: relative; display: inline-block; min-width: 170px; }
+  .ms-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 7px 10px; font-size: 13px; background: rgba(3,16,38,0.6); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-weight: 500; }
+  .ms-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ms-btn.act { border-color: #43b4e2; background: rgba(67,180,226,.16); font-weight: 700; }
+  .ms-btn i { font-style: normal; opacity: .7; font-size: 11px; }
+  .ms-panel { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: min(360px, 92vw); max-height: 320px; overflow-y: auto; z-index: 900; background: #0a2347; border: 1px solid #43b4e2; border-radius: 10px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .ms.open .ms-panel { display: block; }
+  .ms-op { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 14px; color: #e3eefc; margin: 0; }
+  .ms-op:hover { background: rgba(67,180,226,.18); }
+  .ms-op input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #43b4e2; margin: 0; }
+  .ms-op span { flex: 1; }
+  .ms-op b { font-size: 12px; opacity: .75; font-weight: 700; }
+  .fe-campo .ms { width: 100%; }
+  .card:has(.ms.open), .filtros-box:has(.ms.open), .gal-nav { position: relative; z-index: 30; }
+  .card.gal-nav { overflow: visible; }
+  .fe-campo .ms-btn { padding: 11px 12px; font-size: 15px; font-weight: 600; }
   .tabla-reg { font-size: 13px; }
   .tabla-reg th { font-size: 11px; padding: 8px 8px; white-space: nowrap; }
   .tabla-reg td { padding: 7px 8px; font-size: 13px; }
@@ -596,7 +613,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 23 nov · % fase etaria</div>
+    <div class="sidebar-version">Versión 24 nov · selección múltiple</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -726,9 +743,9 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
         <div class="filtros-fila"><span class="filtros-lbl">TIPO</span><div class="filter-chips" id="filtros-tipo"></div></div>
         <div class="filtros-fila">
           <span class="filtros-lbl">FILTRAR</span>
-          <select id="f-zona" onchange="onFiltroSel()"><option value="">Todas las zonas</option><option value="0">Zona 0</option><option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option><option value="4">Zona 4</option><option value="5">Zona 5</option><option value="6">Zona 6</option><option value="7">Zona 7</option><option value="sin">Sin zona</option></select>
-          <select id="f-distrito" onchange="onFiltroSel()"><option value="">Todos los distritos</option></select>
-          <select id="f-fase" onchange="onFiltroSel()"><option value="">Adultos y jóvenes</option><option value="Adulto">Adultos</option><option value="Joven">Jóvenes</option></select>
+          <div class="ms" id="f-zona"></div>
+          <div class="ms" id="f-distrito"></div>
+          <div class="ms" id="f-fase"></div>
           <button onclick="limpiarFiltros()">Quitar filtros</button>
         </div>
       </div>
@@ -819,10 +836,10 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     </div>
     <div class="card gal-nav">
       <div class="fe-selects">
-        <label class="fe-campo"><span>Fase etaria</span><select id="fe-s-fase" onchange="feSel()"></select></label>
-        <label class="fe-campo"><span>Sexo</span><select id="fe-s-sexo" onchange="feSel()"></select></label>
-        <label class="fe-campo"><span>Zona</span><select id="fe-s-zona" onchange="feSel()"></select></label>
-        <label class="fe-campo"><span>Tipo</span><select id="fe-s-tipo" onchange="feSel()"></select></label>
+        <div class="fe-campo"><span>Fase etaria</span><div class="ms" id="fe-s-fase"></div></div>
+        <div class="fe-campo"><span>Sexo</span><div class="ms" id="fe-s-sexo"></div></div>
+        <div class="fe-campo"><span>Zona</span><div class="ms" id="fe-s-zona"></div></div>
+        <div class="fe-campo"><span>Tipo</span><div class="ms" id="fe-s-tipo"></div></div>
         <button onclick="feLimpiar()">Quitar selección</button>
       </div>
       <div class="fe-resumen" id="fe-resumen"></div>
@@ -881,17 +898,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <div class="card">
       <div class="search-row">
         <input type="text" id="deleg-search" placeholder="Escribe el nombre de la persona..." oninput="renderDelegSearch()" autocomplete="off" />
-        <select id="deleg-zona-select" onchange="renderDelegSearch()" style="max-width: 160px; flex-shrink: 0;">
-          <option value="">Todas las zonas</option>
-          <option value="0">Zona 0</option>
-          <option value="1">Zona 1</option>
-          <option value="2">Zona 2</option>
-          <option value="3">Zona 3</option>
-          <option value="4">Zona 4</option>
-          <option value="5">Zona 5</option>
-          <option value="6">Zona 6</option>
-          <option value="7">Zona 7</option>
-        </select>
+        <div class="ms" id="deleg-zona-select" style="max-width:200px; flex-shrink:0;"></div>
       </div>
       <div class="card" id="deleg-results" style="padding:0; margin-top:12px;">
         <div class="empty">Elige una zona y/o escribe un nombre para buscar</div>
@@ -3057,7 +3064,45 @@ const TIPOS = [
   { k: 'invitado',    label: 'Invitados',              corto: 'Invitado',    color: '#b39cf5' },
   { k: 'institucion', label: 'Invitados de instituciones', corto: 'Institución', color: '#e585a6' }
 ];
-let filtroTipo = 'all', filtroZona = '', filtroDistrito = '', filtroFase = '';
+let filtroTipo = [], filtroZona = [], filtroDistrito = [], filtroFase = [];
+// ===== Selector que permite elegir VARIAS opciones =====
+const MS = {};
+function msEsc(x) { return String(x).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function msSetOpts(id, todos, opts, cb) {
+  const m = MS[id] || (MS[id] = { sel: [], opts: [], todos, cb });
+  m.todos = todos; m.opts = opts; if (cb) m.cb = cb;
+  msPintar(id);
+}
+function msPintar(id) {
+  const m = MS[id], el = document.getElementById(id);
+  if (!m || !el) return;
+  const nombres = m.sel.map(v => { const o = m.opts.find(o => o[0] === v); return o ? o[1] : v; });
+  const resumen = !m.sel.length ? m.todos : nombres.length <= 2 ? nombres.join(' + ') : nombres.length + ' seleccionados';
+  const html = '<button type="button" class="ms-btn' + (m.sel.length ? ' act' : '') + '" onclick="msAbrir(\'' + id + '\', event)"><span>' + msEsc(resumen) + '</span><i>▾</i></button><div class="ms-panel">' +
+    '<label class="ms-op"><input type="checkbox" ' + (m.sel.length ? '' : 'checked') + ' onchange="msClear(\'' + id + '\')"><span>' + msEsc(m.todos) + '</span></label>' +
+    m.opts.map(o => '<label class="ms-op"><input type="checkbox" value="' + msEsc(o[0]) + '" ' + (m.sel.includes(o[0]) ? 'checked' : '') + ' onchange="msTog(\'' + id + '\', this.value, this.checked)"><span>' + msEsc(o[1]) + '</span>' + (o[2] != null ? '<b>' + o[2] + '</b>' : '') + '</label>').join('') + '</div>';
+  if (el._h === html) return;
+  const pn = el.querySelector('.ms-panel'), st = pn ? pn.scrollTop : 0;
+  el.classList.add('ms'); el.innerHTML = html; el._h = html;
+  const p2 = el.querySelector('.ms-panel'); if (p2) p2.scrollTop = st;
+}
+function msTog(id, v, on) {
+  const m = MS[id]; if (!m) return;
+  const set = new Set(m.sel); if (on) set.add(v); else set.delete(v);
+  m.sel = m.opts.map(o => o[0]).filter(x => set.has(x)).concat(m.sel.filter(x => set.has(x) && !m.opts.some(o => o[0] === x)));
+  msPintar(id); if (m.cb) m.cb();
+}
+function msClear(id) { const m = MS[id]; if (!m) return; m.sel = []; msPintar(id); if (m.cb) m.cb(); }
+function msReset(id) { const m = MS[id]; if (m) { m.sel = []; msPintar(id); } }
+function msGet(id) { return MS[id] ? MS[id].sel.slice() : []; }
+function msAbrir(id, ev) {
+  ev.stopPropagation();
+  const el = document.getElementById(id), ya = el.classList.contains('open');
+  document.querySelectorAll('.ms.open').forEach(e => e.classList.remove('open'));
+  if (!ya) el.classList.add('open');
+}
+document.addEventListener('click', e => { if (!e.target.closest('.ms')) document.querySelectorAll('.ms.open').forEach(x => x.classList.remove('open')); });
+window.msAbrir = msAbrir; window.msTog = msTog; window.msClear = msClear;
 function parseTipo(v) {
   const t = normalize(String(v == null ? '' : v)).replace(/\s+/g, ' ');
   if (!t) return '';
@@ -3088,26 +3133,24 @@ function renderFiltros() {
   const lista = [{ k: 'all', label: 'Todos', color: '#4fb8e6', n: attendees.length }]
     .concat(TIPOS.map(t => ({ k: t.k, label: t.label, color: t.color, n: cuenta[t.k] || 0 })));
   if (cuenta.sin) lista.push({ k: 'sin', label: 'Sin clasificar', color: '#94abc7', n: cuenta.sin });
-  cont.innerHTML = lista.map(t => `<div class="chip ${filtroTipo === t.k ? 'tipo-act' : ''}" style="--tc:${t.color}" onclick="setFiltroTipo('${t.k}')">${t.label}<span class="n">${t.n}</span></div>`).join('');
-  const sel = document.getElementById('f-distrito');
-  const distritos = Array.from(new Set(attendees.map(a => (a.distrito || '').trim()).filter(Boolean))).sort((x, y) => x.localeCompare(y, 'es'));
-  const firma = distritos.join('|');
-  if (sel.dataset.firma !== firma) {
-    sel.innerHTML = '<option value="">Todos los distritos</option>' + distritos.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
-    sel.dataset.firma = firma;
-  }
-  sel.value = filtroDistrito;
+  cont.innerHTML = lista.map(t => `<div class="chip ${(t.k === 'all' ? !filtroTipo.length : filtroTipo.includes(t.k)) ? 'tipo-act' : ''}" style="--tc:${t.color}" onclick="setFiltroTipo('${t.k}')">${t.label}<span class="n">${t.n}</span></div>`).join('');
+  const cz = {}, cf = {}, cd = {}; attendees.forEach(a => { const z = tieneZona(a) ? String(a.zona) : 'sin'; cz[z] = (cz[z] || 0) + 1; if (a.fase) cf[a.fase] = (cf[a.fase] || 0) + 1; const d = (a.distrito || '').trim(); if (d) cd[d] = (cd[d] || 0) + 1; });
+  msSetOpts('f-zona', 'Todas las zonas', ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, z === '0' ? 'Zona 0 · Delegados generales' : 'Zona ' + z, cz[z] || 0]).concat([['sin', 'Sin zona', cz.sin || 0]]), onFiltroSel);
+  msSetOpts('f-fase', 'Adultos y jóvenes', [['Adulto', 'Adultos', cf.Adulto || 0], ['Joven', 'Jóvenes', cf.Joven || 0]], onFiltroSel);
+  msSetOpts('f-distrito', 'Todos los distritos', Object.keys(cd).sort((x, y) => x.localeCompare(y, 'es')).map(d => [d, d, cd[d]]), onFiltroSel);
 }
-function setFiltroTipo(k) { filtroTipo = k; renderTable(); }
+function setFiltroTipo(k) {
+  if (k === 'all') filtroTipo = [];
+  else filtroTipo = filtroTipo.includes(k) ? filtroTipo.filter(x => x !== k) : filtroTipo.concat(k);
+  renderTable();
+}
 function onFiltroSel() {
-  filtroZona = document.getElementById('f-zona').value;
-  filtroDistrito = document.getElementById('f-distrito').value;
-  filtroFase = document.getElementById('f-fase').value;
+  filtroZona = msGet('f-zona'); filtroDistrito = msGet('f-distrito'); filtroFase = msGet('f-fase');
   renderTable();
 }
 function limpiarFiltros() {
-  filtroTipo = 'all'; filtroZona = ''; filtroDistrito = ''; filtroFase = '';
-  document.getElementById('f-zona').value = ''; document.getElementById('f-fase').value = '';
+  filtroTipo = []; filtroZona = []; filtroDistrito = []; filtroFase = [];
+  ['f-zona', 'f-distrito', 'f-fase'].forEach(msReset);
   document.getElementById('search').value = '';
   setFilter('all');
 }
@@ -3558,41 +3601,33 @@ function inicNombre(n) {
 function galSel(k) { galTab = k; renderGaleria(); }
 
 // --- Vista "Fase etaria": adultos / jóvenes, varones / mujeres, por zona o todas ---
-let feFase = 'all', feSexo = 'all', feZona = 'all', feTipo = 'all';
-function feSet(campo, v) { if (campo === 'fase') feFase = v; if (campo === 'sexo') feSexo = v; if (campo === 'zona') feZona = v; if (campo === 'tipo') feTipo = v; renderFase(); }
-function feSel() {
-  feFase = document.getElementById('fe-s-fase').value; feSexo = document.getElementById('fe-s-sexo').value;
-  feZona = document.getElementById('fe-s-zona').value; feTipo = document.getElementById('fe-s-tipo').value;
-  renderFase();
-}
-function feLimpiar() { feFase = 'all'; feSexo = 'all'; feZona = 'all'; feTipo = 'all'; renderFase(); }
+let feFase = [], feSexo = [], feZona = [], feTipo = [];
+function feSet() {}
+function feSel() { feFase = msGet('fe-s-fase'); feSexo = msGet('fe-s-sexo'); feZona = msGet('fe-s-zona'); feTipo = msGet('fe-s-tipo'); renderFase(); }
+function feLimpiar() { feFase = []; feSexo = []; feZona = []; feTipo = []; ['fe-s-fase', 'fe-s-sexo', 'fe-s-zona', 'fe-s-tipo'].forEach(msReset); renderFase(); }
 function renderFase() {
   const cont = document.getElementById('fe-secciones');
   if (!cont) return;
   const base = attendees.slice();
-  const pasa = (a, omitir) => (omitir === 'fase' || feFase === 'all' || (feFase === 'sin' ? !a.fase : a.fase === feFase)) &&
-    (omitir === 'sexo' || feSexo === 'all' || a.sexo === feSexo) &&
-    (omitir === 'zona' || feZona === 'all' || String(a.zona ?? '') === feZona) &&
-    (omitir === 'tipo' || feTipo === 'all' || (a.tipo || 'sin') === feTipo);
+  const pasa = (a, omitir) => (omitir === 'fase' || !feFase.length || feFase.some(v => v === 'sin' ? !a.fase : a.fase === v)) &&
+    (omitir === 'sexo' || !feSexo.length || feSexo.includes(a.sexo)) &&
+    (omitir === 'zona' || !feZona.length || feZona.includes(String(a.zona ?? ''))) &&
+    (omitir === 'tipo' || !feTipo.length || feTipo.includes(a.tipo || 'sin'));
   const cuenta = (omitir, f) => base.filter(a => pasa(a, omitir) && f(a)).length;
-  const llenar = (id, valor, opciones) => {
-    const el = document.getElementById(id);
-    const html = opciones.map(o => '<option value="' + o[0] + '">' + escapeHtml(o[1]) + '</option>').join('');
-    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
-    el.value = valor;
-  };
-  llenar('fe-s-fase', feFase, [['all', 'Todas (adultos y jóvenes)'], ['Adulto', 'Adultos (' + cuenta('fase', a => a.fase === 'Adulto') + ')'], ['Joven', 'Jóvenes (' + cuenta('fase', a => a.fase === 'Joven') + ')']]
-    .concat(base.some(a => !a.fase) ? [['sin', 'Sin fase etaria (' + cuenta('fase', a => !a.fase) + ')']] : []));
-  llenar('fe-s-sexo', feSexo, [['all', 'Todos (varones y mujeres)'], ['M', 'Varones (' + cuenta('sexo', a => a.sexo === 'M') + ')'], ['F', 'Mujeres (' + cuenta('sexo', a => a.sexo === 'F') + ')']]);
-  llenar('fe-s-zona', feZona, [['all', 'Todas las zonas']].concat(['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, (z === '0' ? 'Zona 0 · Delegados generales' : 'Zona ' + z) + ' (' + cuenta('zona', a => String(a.zona ?? '') === z) + ')'])));
-  llenar('fe-s-tipo', feTipo, [['all', 'Todos los tipos']].concat(TIPOS.map(t => [t.k, t.label + ' (' + cuenta('tipo', a => a.tipo === t.k) + ')']))
-    .concat(base.some(a => !a.tipo) ? [['sin', 'Sin clasificar (' + cuenta('tipo', a => !a.tipo) + ')']] : []));
+  const llenar = (id, todos, opciones) => msSetOpts(id, todos, opciones, feSel);
+  llenar('fe-s-fase', 'Todas (adultos y jóvenes)', [['Adulto', 'Adultos', cuenta('fase', a => a.fase === 'Adulto')], ['Joven', 'Jóvenes', cuenta('fase', a => a.fase === 'Joven')]]
+    .concat(base.some(a => !a.fase) ? [['sin', 'Sin fase etaria', cuenta('fase', a => !a.fase)]] : []));
+  llenar('fe-s-sexo', 'Todos (varones y mujeres)', [['M', 'Varones', cuenta('sexo', a => a.sexo === 'M')], ['F', 'Mujeres', cuenta('sexo', a => a.sexo === 'F')]]);
+  llenar('fe-s-zona', 'Todas las zonas', ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, z === '0' ? 'Zona 0 · Delegados generales' : 'Zona ' + z, cuenta('zona', a => String(a.zona ?? '') === z)]));
+  llenar('fe-s-tipo', 'Todos los tipos', TIPOS.map(t => [t.k, t.label, cuenta('tipo', a => a.tipo === t.k)])
+    .concat(base.some(a => !a.tipo) ? [['sin', 'Sin clasificar', cuenta('tipo', a => !a.tipo)]] : []));
 
   // Resumen: los 4 grupos (varones/mujeres × adultos/jóvenes) dentro de la zona y tipo elegidos
-  const c4 = (sx, fs) => base.filter(a => pasa(a, 'sexo') && a.sexo === sx && a.fase === fs && (feFase === 'all' || feFase === fs) && (feSexo === 'all' || feSexo === sx)).length;
+  const c4 = (sx, fs) => base.filter(a => pasa(a, 'sexo') && a.sexo === sx && a.fase === fs && (!feFase.length || feFase.includes(fs)) && (!feSexo.length || feSexo.includes(sx))).length;
   const grupo4 = [['Varones adultos', 'M', 'Adulto'], ['Varones jóvenes', 'M', 'Joven'], ['Mujeres adultas', 'F', 'Adulto'], ['Mujeres jóvenes', 'F', 'Joven']];
-  const dentro = base.filter(a => (feZona === 'all' || String(a.zona ?? '') === feZona) && (feTipo === 'all' || (a.tipo || 'sin') === feTipo));
-  document.getElementById('fe-resumen').innerHTML = '<span class="fe-res-t">' + (feZona === 'all' ? 'Todas las zonas' : 'Zona ' + feZona) + ':</span>' +
+  const dentro = base.filter(a => (!feZona.length || feZona.includes(String(a.zona ?? ''))) && (!feTipo.length || feTipo.includes(a.tipo || 'sin')));
+  const zonaTxt = !feZona.length ? 'Todas las zonas' : feZona.length === 1 ? 'Zona ' + feZona[0] : 'Zonas ' + feZona.join(', ');
+  document.getElementById('fe-resumen').innerHTML = '<span class="fe-res-t">' + zonaTxt + ':</span>' +
     grupo4.map(g => { const n = dentro.filter(a => a.sexo === g[1] && a.fase === g[2]).length; return '<span class="fe-res-i"><b>' + n + '</b> ' + g[0] + ' <em>' + pctTxt(n, base.length) + '</em></span>'; }).join('');
 
   const lista = base.filter(a => pasa(a, null)).sort((a, b) => fullName(a).localeCompare(fullName(b), 'es'));
@@ -3606,16 +3641,17 @@ function renderFase() {
     '<div class="card"><div class="fase-titulo" style="color:' + g.col + ';border-color:' + g.col + '55;">' + g.t + '<span class="cnt">' + g.items.length + '</span></div>' +
     '<div class="gal-grid">' + g.items.map(tarjeta).join('') + '</div></div>').join('') :
     '<div class="card"><div class="empty">No hay personas con esos filtros. Si aún no cargaste el Excel con la fase etaria, importa la lista y aparecerán aquí.</div></div>';
-  let quien = feSexo === 'M' ? (feFase === 'Adulto' ? 'Varones adultos' : feFase === 'Joven' ? 'Varones jóvenes' : 'Varones')
-            : feSexo === 'F' ? (feFase === 'Adulto' ? 'Mujeres adultas' : feFase === 'Joven' ? 'Mujeres jóvenes' : 'Mujeres')
-            : (feFase === 'Adulto' ? 'Adultos' : feFase === 'Joven' ? 'Jóvenes' : 'Fase etaria');
-  document.getElementById('fe-titulo').textContent = quien + (feZona !== 'all' ? ' · Zona ' + feZona : ' · Todas las zonas');
+  const f1 = feFase.length === 1 ? feFase[0] : null, s1 = feSexo.length === 1 ? feSexo[0] : null;
+  let quien = s1 === 'M' ? (f1 === 'Adulto' ? 'Varones adultos' : f1 === 'Joven' ? 'Varones jóvenes' : 'Varones')
+            : s1 === 'F' ? (f1 === 'Adulto' ? 'Mujeres adultas' : f1 === 'Joven' ? 'Mujeres jóvenes' : 'Mujeres')
+            : (f1 === 'Adulto' ? 'Adultos' : f1 === 'Joven' ? 'Jóvenes' : 'Fase etaria');
+  document.getElementById('fe-titulo').textContent = quien + ' · ' + zonaTxt;
   document.getElementById('fe-total').textContent = lista.length;
   // Porcentaje: personas que se ven ÷ total de delegados registrados × 100
   const pe = document.getElementById('fe-pct');
   if (pe) {
-    const tz = feZona !== 'all' ? (feZona === '0' ? 'la Zona 0' : 'la Zona ' + feZona) : '';
-    const tt = feTipo !== 'all' ? ((TIPOS.find(t => t.k === feTipo) || { label: 'Sin clasificar' }).label.toLowerCase()) : '';
+    const tz = feZona.length ? (feZona.length === 1 ? 'la Zona ' + feZona[0] : 'las zonas ' + feZona.join(', ')) : '';
+    const tt = feTipo.length ? feTipo.map(k => ((TIPOS.find(t => t.k === k) || { label: 'Sin clasificar' }).label.toLowerCase())).join(' + ') : '';
     const sub = (tz || tt) && dentro.length ? '<small>' + pctTxt(lista.length, dentro.length) + ' de ' + [tz, tt].filter(Boolean).join(' · ') + ' (' + lista.length + ' de ' + dentro.length + ')</small>' : '';
     pe.innerHTML = '<div class="num">' + pctTxt(lista.length, base.length) + '</div><div class="det"><b>del total de delegados</b><small>' + lista.length + ' de ' + base.length + ' registrados</small>' + sub + '</div>';
   }
@@ -3996,11 +4032,12 @@ function renderDelegSearch() {
   renderComisionHeader();
   const c = COMISIONES[comActual];
   const q = buscable(document.getElementById('deleg-search').value);
-  const zonaSel = document.getElementById('deleg-zona-select').value;
+  msSetOpts('deleg-zona-select', 'Todas las zonas', ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, 'Zona ' + z]), renderDelegSearch);
+  const zonaSel = msGet('deleg-zona-select');
   const resultsEl = document.getElementById('deleg-results');
 
   let candidatos = attendees.slice();
-  if (zonaSel) candidatos = candidatos.filter(a => String(a.zona ?? '') === zonaSel);
+  if (zonaSel.length) candidatos = candidatos.filter(a => zonaSel.includes(String(a.zona ?? '')));
 
   if (q) {
     const palabras = q.split(' ').filter(Boolean);
@@ -4010,7 +4047,7 @@ function renderDelegSearch() {
     });
   }
 
-  if (!zonaSel && !q) {
+  if (!zonaSel.length && !q) {
     resultsEl.innerHTML = '<div class="empty">Elige una zona y/o escribe un nombre o DNI para buscar</div>';
     return;
   }
@@ -4222,10 +4259,10 @@ function renderTable() {
 
   if (currentFilter === 'in') rows = rows.filter(a => a.llego);
   if (currentFilter === 'out') rows = rows.filter(a => !a.llego);
-  if (filtroTipo !== 'all') rows = rows.filter(a => (a.tipo || 'sin') === filtroTipo);
-  if (filtroZona) rows = rows.filter(a => filtroZona === 'sin' ? !tieneZona(a) : String(a.zona) === filtroZona);
-  if (filtroDistrito) rows = rows.filter(a => (a.distrito || '').trim() === filtroDistrito);
-  if (filtroFase) rows = rows.filter(a => a.fase === filtroFase);
+  if (filtroTipo.length) rows = rows.filter(a => filtroTipo.includes(a.tipo || 'sin'));
+  if (filtroZona.length) rows = rows.filter(a => tieneZona(a) ? filtroZona.includes(String(a.zona)) : filtroZona.includes('sin'));
+  if (filtroDistrito.length) rows = rows.filter(a => filtroDistrito.includes((a.distrito || '').trim()));
+  if (filtroFase.length) rows = rows.filter(a => filtroFase.includes(a.fase));
 
   ultimasFilas = rows;
   const tbody = document.getElementById('table-body');
