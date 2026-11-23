@@ -282,8 +282,8 @@
     .nav-group { display: block; }
     .nav-item { display: block; padding: 9px 12px; white-space: normal; }
 
-    .shell { flex-direction: column; }
-    .main { padding: 16px; }
+    .shell { flex-direction: column; align-items: stretch; }
+    .main { padding: 16px; width: 100%; max-width: 100%; box-sizing: border-box; }
     .topbar { display: none; }
     .stat-grid { display: flex; flex-direction: column; gap: 10px; }
     .stat-card { width: 100%; padding: 14px; }
@@ -482,6 +482,11 @@
   .pd-meta-fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .pd-meta-fila input { width: 110px; }
   /* Tabla de registro más compacta */
+  .fe-pct { display: flex; align-items: center; gap: 14px; padding: 8px 18px; border-radius: 16px; border: 1.5px solid #e2a64a; background: linear-gradient(160deg, rgba(226,166,74,.22), rgba(226,166,74,.06)); }
+  .fe-pct .num { font-size: 40px; font-weight: 900; line-height: 1; color: #ffd98f; text-shadow: 0 0 14px rgba(226,166,74,.45); }
+  .fe-pct .det { font-size: 13px; line-height: 1.35; color: #eaf4ff; }
+  .fe-pct .det small { display: block; opacity: .75; font-size: 12px; }
+  .fe-res-i em { font-style: normal; color: #ffd98f; font-weight: 800; margin-left: 4px; }
   .tabla-reg { font-size: 13px; }
   .tabla-reg th { font-size: 11px; padding: 8px 8px; white-space: nowrap; }
   .tabla-reg td { padding: 7px 8px; font-size: 13px; }
@@ -491,6 +496,50 @@
   .tabla-reg .tipo-badge { font-size: 11px; padding: 2px 8px; }
   .tabla-reg .sexo-tag { font-size: 12px; white-space: nowrap; }
   .tabla-reg td:nth-child(3), .tabla-reg td:nth-child(8), .tabla-reg td:nth-child(9), .tabla-reg td:nth-child(10) { white-space: nowrap; }
+
+  /* ===== CELULAR Y TABLET ===== */
+  @media (max-width: 900px) {
+    .card, .filtros-box { max-width: 100%; box-sizing: border-box; }
+    .filtros-fila select { flex: 1 1 140px; min-width: 0; }
+    .filtros-fila button, .btn-row button { flex: 1 1 auto; }
+    .filtros-fila .filtros-lbl { flex: 1 1 100%; }
+    .filter-chips .chip { padding: 9px 14px; }
+    .row-action-btn { min-height: 38px; }
+    .gal-nav, .gal-zonas { flex-wrap: wrap; }
+  }
+  @media (min-width: 701px) and (max-width: 900px) { .tabla-reg tr { grid-template-columns: repeat(3, 1fr) !important; } .tabla-reg td:nth-child(2) { grid-column: 1 / -1; } }
+  @media (max-width: 900px) {
+    .main { padding: 12px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-grid > :last-child { grid-column: 1 / -1; }
+    .stat-card { padding: 10px 12px; }
+    table.tabla-reg { min-width: 0; display: block; }
+    .tabla-reg thead { display: none; }
+    .tabla-reg tbody { display: block; }
+    .tabla-reg tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 14px; background: rgba(120,180,230,0.06); }
+    .tabla-reg td { display: block; padding: 0; border: 0; white-space: normal !important; min-width: 0; font-size: 14px; }
+    .tabla-reg td:nth-child(1) { display: none; }
+    .tabla-reg td:nth-child(2) { grid-column: 1 / -1; }
+    .tabla-reg .invitado-name { font-size: 16px; }
+    .tabla-reg td:nth-child(n+3):not(.acc-cell)::before { display: block; font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; opacity: .6; margin-bottom: 1px; }
+    .tabla-reg td:nth-child(3)::before { content: 'DNI'; }
+    .tabla-reg td:nth-child(4)::before { content: 'Tipo'; }
+    .tabla-reg td:nth-child(5)::before { content: 'Zona'; }
+    .tabla-reg td:nth-child(6)::before { content: 'Distrito'; }
+    .tabla-reg td:nth-child(7)::before { content: 'Fase etaria'; }
+    .tabla-reg td:nth-child(8)::before { content: 'Sexo'; }
+    .tabla-reg td:nth-child(9)::before { content: 'Estado'; }
+    .tabla-reg td:nth-child(10)::before { content: 'Hora de ingreso'; }
+    .tabla-reg td.acc-cell { grid-column: 1 / -1; margin-top: 4px; width: 100% !important; }
+    .tabla-reg .acc-fila { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tabla-reg .acc-fila .row-action-btn { flex: 1 1 0; min-height: 44px; font-size: 14px; }
+    .table-wrap { max-height: none; overflow-y: visible; }
+    .search-row { gap: 8px; }
+    .filtros-fila button { flex: 1 1 44%; font-size: 13px; padding: 9px 8px; }
+    .search-row .dni-badge { display: none; }
+    .modal, .edit-modal { max-width: 94vw; }
+  }
+  @media (pointer: coarse) { button, .chip, .nav-item, select { min-height: 40px; } }
   .tabla-reg .acc-cell { white-space: nowrap; width: 1%; }
   .acc-fila { display: flex; gap: 5px; align-items: center; flex-wrap: nowrap; }
   .tabla-reg .row-action-btn { padding: 4px 9px; font-size: 11px; line-height: 1.2; white-space: nowrap; border-radius: 7px; }
@@ -547,7 +596,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 20 nov · reporte Excel</div>
+    <div class="sidebar-version">Versión 23 nov · % fase etaria</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -766,6 +815,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div>
         <div class="topbar-title"><span id="fe-titulo">Fase etaria</span> <span class="muted" style="font-size:16px;font-weight:600;">· <span id="fe-total">0</span> personas</span></div>
       </div>
+      <div class="fe-pct" id="fe-pct"></div>
     </div>
     <div class="card gal-nav">
       <div class="fe-selects">
@@ -3543,7 +3593,7 @@ function renderFase() {
   const grupo4 = [['Varones adultos', 'M', 'Adulto'], ['Varones jóvenes', 'M', 'Joven'], ['Mujeres adultas', 'F', 'Adulto'], ['Mujeres jóvenes', 'F', 'Joven']];
   const dentro = base.filter(a => (feZona === 'all' || String(a.zona ?? '') === feZona) && (feTipo === 'all' || (a.tipo || 'sin') === feTipo));
   document.getElementById('fe-resumen').innerHTML = '<span class="fe-res-t">' + (feZona === 'all' ? 'Todas las zonas' : 'Zona ' + feZona) + ':</span>' +
-    grupo4.map(g => '<span class="fe-res-i"><b>' + dentro.filter(a => a.sexo === g[1] && a.fase === g[2]).length + '</b> ' + g[0] + '</span>').join('');
+    grupo4.map(g => { const n = dentro.filter(a => a.sexo === g[1] && a.fase === g[2]).length; return '<span class="fe-res-i"><b>' + n + '</b> ' + g[0] + ' <em>' + pctTxt(n, base.length) + '</em></span>'; }).join('');
 
   const lista = base.filter(a => pasa(a, null)).sort((a, b) => fullName(a).localeCompare(fullName(b), 'es'));
   const grupos = [
@@ -3561,7 +3611,16 @@ function renderFase() {
             : (feFase === 'Adulto' ? 'Adultos' : feFase === 'Joven' ? 'Jóvenes' : 'Fase etaria');
   document.getElementById('fe-titulo').textContent = quien + (feZona !== 'all' ? ' · Zona ' + feZona : ' · Todas las zonas');
   document.getElementById('fe-total').textContent = lista.length;
+  // Porcentaje: personas que se ven ÷ total de delegados registrados × 100
+  const pe = document.getElementById('fe-pct');
+  if (pe) {
+    const tz = feZona !== 'all' ? (feZona === '0' ? 'la Zona 0' : 'la Zona ' + feZona) : '';
+    const tt = feTipo !== 'all' ? ((TIPOS.find(t => t.k === feTipo) || { label: 'Sin clasificar' }).label.toLowerCase()) : '';
+    const sub = (tz || tt) && dentro.length ? '<small>' + pctTxt(lista.length, dentro.length) + ' de ' + [tz, tt].filter(Boolean).join(' · ') + ' (' + lista.length + ' de ' + dentro.length + ')</small>' : '';
+    pe.innerHTML = '<div class="num">' + pctTxt(lista.length, base.length) + '</div><div class="det"><b>del total de delegados</b><small>' + lista.length + ' de ' + base.length + ' registrados</small>' + sub + '</div>';
+  }
 }
+function pctTxt(n, total) { return total ? (n / total * 100).toLocaleString('es-PE', { maximumFractionDigits: 1 }) + '%' : '—'; }
 window.feSet = feSet; window.feSel = feSel; window.feLimpiar = feLimpiar;
 
 function galQuery() { const e = document.getElementById('gal-buscar'); return e ? buscable(e.value).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(Boolean) : []; }
