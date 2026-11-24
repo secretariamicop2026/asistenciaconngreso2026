@@ -623,7 +623,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 24 nov · materiales</div>
+    <div class="sidebar-version">Versión 24 nov · DNI corregido</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -4870,7 +4870,8 @@ async function saveEditPerson() {
   const esSD = String(a.dni).startsWith('SD-');
   const dniActual = a.dniReal || (esSD ? '' : a.dni);
   if (dniNuevo && dniNuevo !== dniActual) {
-    const otro = attendees.find(x => x.dni !== a.dni && (x.dni === dniNuevo || x.dniReal === dniNuevo));
+    const dniEfectivo = x => x.dniReal || (String(x.dni).startsWith('SD-') ? '' : x.dni);
+    const otro = attendees.find(x => x.dni !== a.dni && dniEfectivo(x) === dniNuevo);
     if (otro) { st.textContent = '⚠ Ese DNI ya lo tiene ' + fullName(otro) + '. Revisa el número.'; return; }
     if (dniNuevo.length !== 8 && !window.confirm('El DNI tiene ' + dniNuevo.length + ' dígitos (lo normal son 8). ¿Guardarlo igual?')) return;
   }
