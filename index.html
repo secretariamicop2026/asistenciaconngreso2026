@@ -504,6 +504,16 @@
   .card:has(.ms.open), .filtros-box:has(.ms.open), .gal-nav { position: relative; z-index: 30; }
   .card.gal-nav { overflow: visible; }
   .fe-campo .ms-btn { padding: 11px 12px; font-size: 15px; font-weight: 600; }
+  .btn-file { display: inline-block; cursor: pointer; margin: 0; }
+  .btn-like { display: inline-block; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border); background: rgba(3,16,38,0.6); color: var(--text); font-size: 13px; font-weight: 600; }
+  .btn-like:hover { border-color: #43b4e2; }
+  .obs-mini { font-size: 12px; opacity: .7; margin-top: 2px; }
+  @media (max-width: 900px) {
+    .tabla-reg.tabla-mat td:nth-child(6)::before { content: 'Distrito'; }
+    .tabla-reg.tabla-mat td:nth-child(7)::before { content: 'Material'; }
+    .tabla-reg.tabla-mat td:nth-child(8)::before { content: 'Hora de entrega'; }
+    .tabla-reg.tabla-mat td.acc-cell::before { content: none !important; display: none !important; }
+  }
   .tabla-reg { font-size: 13px; }
   .tabla-reg th { font-size: 11px; padding: 8px 8px; white-space: nowrap; }
   .tabla-reg td { padding: 7px 8px; font-size: 13px; }
@@ -613,13 +623,19 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 24 nov · selección múltiple</div>
+    <div class="sidebar-version">Versión 24 nov · materiales</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
       <div class="nav-item" onclick="switchTab('registro'); setFilter('all'); closeMobileMenu()">Todos</div>
       <div class="nav-item" onclick="switchTab('registro'); setFilter('in'); closeMobileMenu()">Presentes</div>
       <div class="nav-item" onclick="switchTab('registro'); setFilter('out'); closeMobileMenu()">Por llegar</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-pill verde">ENTREGA DE MATERIALES</div>
+      <div class="nav-item" onclick="switchTab('materiales'); closeMobileMenu()">📦 Entregar materiales</div>
+      <div class="nav-item" onclick="exportMateriales('completo'); closeMobileMenu()">⬇ Informe de materiales</div>
     </div>
 
     <div class="nav-group">
@@ -759,6 +775,66 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
         <div class="empty" id="table-empty" style="display:none;">No hay personas en esta vista</div>
       </div>
       <div class="table-footer" id="table-footer"></div>
+    </div>
+  </div>
+
+  <div id="view-materiales" style="display:none;">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Entrega de materiales</div>
+        <div class="topbar-subtitle">Lista independiente · <b>no cuenta</b> en el registro de asistencia del congreso</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+      <div class="stat-card top-celeste"><div class="stat-top"><div class="stat-icon celeste">📋</div><div class="stat-label">En la lista</div></div><div class="stat-num" id="mat-total">0</div><div class="stat-sub">&nbsp;</div></div>
+      <div class="stat-card top-verde"><div class="stat-top"><div class="stat-icon verde">📦</div><div class="stat-label">Entregados</div></div><div class="stat-num" id="mat-ent">0</div><div class="stat-sub">&nbsp;</div></div>
+      <div class="stat-card top-amarillo"><div class="stat-top"><div class="stat-icon amarillo">⏳</div><div class="stat-label">Pendientes</div></div><div class="stat-num" id="mat-pen">0</div><div class="stat-sub">&nbsp;</div></div>
+      <div class="stat-card top-verde"><div class="stat-top"><div class="stat-icon verde">📈</div><div class="stat-label">Avance</div></div><div class="stat-num" id="mat-pct">0%</div><div class="progress-bar"><div class="progress-fill" id="mat-fill" style="width:0%"></div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-eyebrow">LISTA DE MATERIALES</div>
+      <div class="search-row">
+        <input type="text" id="mat-buscar" placeholder="Buscar por nombre o DNI..." oninput="renderMateriales()" autocomplete="off" />
+        <button class="primary" onclick="matAbrir()">+ Agregar persona</button>
+      </div>
+      <div class="filter-chips" id="mat-chips">
+        <div class="chip active" data-f="all" onclick="matSetFiltro('all')">Todos</div>
+        <div class="chip" data-f="ent" onclick="matSetFiltro('ent')">Entregados</div>
+        <div class="chip" data-f="pen" onclick="matSetFiltro('pen')">Pendientes</div>
+      </div>
+      <div class="filtros-box">
+        <div class="filtros-fila">
+          <span class="filtros-lbl">FILTRAR</span>
+          <div class="ms" id="mat-f-zona"></div>
+          <div class="ms" id="mat-f-tipo"></div>
+          <button onclick="matLimpiar()">Quitar filtros</button>
+        </div>
+        <div class="filtros-fila">
+          <span class="filtros-lbl">EXCEL</span>
+          <button onclick="exportMateriales('entregados')">⬇ Los que recibieron</button>
+          <button onclick="exportMateriales('pendientes')">⬇ Los que NO recibieron</button>
+          <button onclick="exportMateriales('filtrado')">⬇ Lo que veo ahora</button>
+          <button class="primary" onclick="exportMateriales('completo')">⬇ Informe completo</button>
+        </div>
+        <div class="filtros-fila">
+          <span class="filtros-lbl">LISTA</span>
+          <label class="btn-file"><input type="file" id="mat-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="matImportar(event)"><span class="btn-like">⬆ Subir lista (Excel)</span></label>
+          <button onclick="matPlantilla()">⬇ Descargar formato</button>
+          <button onclick="matTraerDelegados()">Traer delegados registrados</button>
+          <button class="desmarcar" onclick="matVaciar()">🗑 Vaciar lista</button>
+        </div>
+        <p class="muted" id="mat-status" style="margin:6px 0 0; white-space:pre-line;"></p>
+      </div>
+      <div class="table-wrap">
+        <table class="tabla-reg tabla-mat">
+          <thead><tr><th>N°</th><th>Persona</th><th>DNI</th><th>Tipo</th><th>Zona</th><th>Distrito</th><th>Material</th><th>Hora de entrega</th><th>Acción</th></tr></thead>
+          <tbody id="mat-body"></tbody>
+        </table>
+        <div class="empty" id="mat-empty" style="display:none;">La lista está vacía. Sube tu Excel con el botón «Subir lista» o usa «Traer delegados registrados».</div>
+      </div>
+      <div class="table-footer" id="mat-footer"></div>
     </div>
   </div>
 
@@ -1151,6 +1227,26 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     </div>
     <button class="primary" style="width:100%;" onclick="saveEditPerson()">Guardar cambios</button>
     <p class="muted" id="ed-status" style="margin-top:10px; margin-bottom:0;"></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mat-modal-overlay">
+  <div class="modal" style="max-width:520px; max-height:92vh; overflow-y:auto;">
+    <button class="modal-close" onclick="matCerrar()">✕</button>
+    <div class="modal-eyebrow">ENTREGA DE MATERIALES</div>
+    <div class="modal-title" id="mat-m-titulo">Agregar persona</div>
+    <div class="modal-desc">Solo se guarda en la lista de materiales. <b>No afecta el registro de asistencia.</b></div>
+    <div class="edit-grid">
+      <div class="field-group"><label class="field-label">Nombre</label><input type="text" id="mat-m-nombre"></div>
+      <div class="field-group"><label class="field-label">Apellidos</label><input type="text" id="mat-m-apellidos"></div>
+      <div class="field-group"><label class="field-label">DNI</label><input type="text" id="mat-m-dni" inputmode="numeric" placeholder="8 dígitos (opcional)"></div>
+      <div class="field-group"><label class="field-label">Zona</label><select id="mat-m-zona"><option value="">Sin zona</option><option value="0">Zona 0</option><option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option><option value="4">Zona 4</option><option value="5">Zona 5</option><option value="6">Zona 6</option><option value="7">Zona 7</option></select></div>
+      <div class="field-group"><label class="field-label">Distrito</label><input type="text" id="mat-m-distrito"></div>
+      <div class="field-group"><label class="field-label">Tipo</label><select id="mat-m-tipo"><option value="">Sin clasificar</option><option value="general">Delegado general</option><option value="regular">Delegado regular</option><option value="adicional">Delegado adicional</option><option value="invitado">Invitado</option><option value="institucion">Invitado de institución</option></select></div>
+      <div class="field-group" style="grid-column:1/-1;"><label class="field-label">Observación (opcional)</label><input type="text" id="mat-m-obs"></div>
+    </div>
+    <button class="primary" style="width:100%;" onclick="matGuardar()">Guardar</button>
+    <p class="muted" id="mat-m-status" style="margin-top:10px; margin-bottom:0;"></p>
   </div>
 </div>
 
@@ -3509,6 +3605,269 @@ onSnapshot(galeriaCol, (snap) => {
   renderGaleria();
 }, () => {});
 
+
+// =====================================================================
+//  ENTREGA DE MATERIALES — lista APARTE (colección "materiales").
+//  No lee ni escribe la colección "asistentes": no cuenta en el registro.
+// =====================================================================
+const materialesCol = collection(db, "materiales");
+let materiales = [], matFiltro = 'all', matUltimas = [];
+onSnapshot(materialesCol, (snap) => {
+  materiales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (document.getElementById('view-materiales').style.display !== 'none') renderMateriales();
+}, () => {});
+
+const matClave = (n, a) => normalize((n || '') + ' ' + (a || '')).split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+function matHashId(n, a) { let h = 5381; const t = matClave(n, a); for (let i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0; return 'SD-' + h.toString(36).toUpperCase(); }
+const matDni = m => m.dniReal || (String(m.id).startsWith('SD-') ? '' : m.id);
+function matZonaTxt(m) { return tieneZona(m) ? (String(m.zona) === '0' ? 'Zona 0' : 'Zona ' + m.zona) : '—'; }
+function matSetFiltro(f) {
+  matFiltro = f;
+  document.querySelectorAll('#mat-chips .chip').forEach(c => c.classList.toggle('active', c.dataset.f === f));
+  renderMateriales();
+}
+function matLimpiar() {
+  matFiltro = 'all'; document.getElementById('mat-buscar').value = '';
+  msReset('mat-f-zona'); msReset('mat-f-tipo');
+  matSetFiltro('all');
+}
+function renderMateriales() {
+  const body = document.getElementById('mat-body');
+  if (!body) return;
+  const total = materiales.length, ent = materiales.filter(m => m.entregado).length;
+  document.getElementById('mat-total').textContent = total;
+  document.getElementById('mat-ent').textContent = ent;
+  document.getElementById('mat-pen').textContent = total - ent;
+  const pct = total ? Math.round(ent / total * 100) : 0;
+  document.getElementById('mat-pct').textContent = pct + '%';
+  document.getElementById('mat-fill').style.width = pct + '%';
+
+  const cz = {}, ct = {};
+  materiales.forEach(m => { const z = tieneZona(m) ? String(m.zona) : 'sin'; cz[z] = (cz[z] || 0) + 1; const t = m.tipo || 'sin'; ct[t] = (ct[t] || 0) + 1; });
+  msSetOpts('mat-f-zona', 'Todas las zonas', ['0', '1', '2', '3', '4', '5', '6', '7'].map(z => [z, z === '0' ? 'Zona 0 · Delegados generales' : 'Zona ' + z, cz[z] || 0]).concat([['sin', 'Sin zona', cz.sin || 0]]), renderMateriales);
+  msSetOpts('mat-f-tipo', 'Todos los tipos', TIPOS.map(t => [t.k, t.label, ct[t.k] || 0]).concat([['sin', 'Sin clasificar', ct.sin || 0]]), renderMateriales);
+
+  const q = buscable(document.getElementById('mat-buscar').value).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(Boolean);
+  const fz = msGet('mat-f-zona'), ft = msGet('mat-f-tipo');
+  let rows = materiales.slice().sort((a, b) => (a.ord ?? 1e9) - (b.ord ?? 1e9) || fullName(a).localeCompare(fullName(b), 'es'));
+  if (matFiltro === 'ent') rows = rows.filter(m => m.entregado);
+  if (matFiltro === 'pen') rows = rows.filter(m => !m.entregado);
+  if (fz.length) rows = rows.filter(m => tieneZona(m) ? fz.includes(String(m.zona)) : fz.includes('sin'));
+  if (ft.length) rows = rows.filter(m => ft.includes(m.tipo || 'sin'));
+  if (q.length) rows = rows.filter(m => { const n = buscable(fullName(m) + ' ' + matDni(m)).replace(/[^a-z0-9 ]/g, ' '); return q.every(w => n.includes(w)); });
+  matUltimas = rows;
+  document.getElementById('mat-empty').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('mat-footer').textContent = 'Mostrando ' + rows.length + ' de ' + total + ' personas';
+  body.innerHTML = rows.map((m, i) => `
+    <tr>
+      <td><span class="num-badge">${m.num || (i + 1)}</span></td>
+      <td><div class="invitado-name">${escapeHtml(fullName(m))}</div>${m.obs ? '<div class="obs-mini">' + escapeHtml(m.obs) + '</div>' : ''}</td>
+      <td>${escapeHtml(matDni(m) || 'Sin DNI')}</td>
+      <td>${tipoBadge(m)}</td>
+      <td style="white-space:nowrap;">${escapeHtml(matZonaTxt(m))}</td>
+      <td style="white-space:nowrap;">${m.distrito ? escapeHtml(m.distrito) : '—'}</td>
+      <td>${m.entregado ? '<span class="badge presente"><span class="badge-dot"></span>Entregado</span>' : '<span class="badge pendiente"><span class="badge-dot"></span>Pendiente</span>'}</td>
+      <td>${m.entregado ? (escapeHtml(((m.fecha ? m.fecha + ' ' : '') + (m.hora || '')).trim()) || '—') : '—'}</td>
+      <td class="acc-cell"><div class="acc-fila">${m.entregado
+        ? `<button class="row-action-btn desmarcar" onclick="matToggle('${escapeHtml(m.id)}')">Deshacer</button>`
+        : `<button class="row-action-btn marcar" onclick="matToggle('${escapeHtml(m.id)}')">Entregar</button>`}
+        <button class="row-action-btn" title="Editar" onclick="matAbrir('${escapeHtml(m.id)}')">✏</button>
+        <button class="row-action-btn desmarcar" title="Quitar de la lista de materiales" onclick="matBorrar('${escapeHtml(m.id)}')">🗑</button></div></td>
+    </tr>`).join('');
+}
+async function matToggle(id) {
+  const m = materiales.find(x => x.id === id); if (!m) return;
+  const ahora = new Date();
+  try {
+    await setDoc(doc(materialesCol, id), m.entregado
+      ? { entregado: false, hora: '', fecha: '' }
+      : { entregado: true, hora: ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }), fecha: ahora.toLocaleDateString('es-PE') }, { merge: true });
+  } catch (e) { showError('No se pudo guardar: ' + (e && e.message ? e.message : e)); }
+}
+async function matBorrar(id) {
+  const m = materiales.find(x => x.id === id); if (!m) return;
+  if (!confirm('¿Quitar a ' + fullName(m) + ' de la lista de materiales?\n(No se borra del registro de asistencia.)')) return;
+  try { await deleteDoc(doc(materialesCol, id)); } catch (e) { showError('No se pudo borrar: ' + (e && e.message ? e.message : e)); }
+}
+let matEditId = null;
+function matAbrir(id) {
+  matEditId = id || null;
+  const m = id ? materiales.find(x => x.id === id) : null;
+  document.getElementById('mat-m-titulo').textContent = m ? 'Editar persona' : 'Agregar persona';
+  document.getElementById('mat-m-nombre').value = m ? (m.nombre || '') : '';
+  document.getElementById('mat-m-apellidos').value = m ? (m.apellidos || '') : '';
+  document.getElementById('mat-m-dni').value = m ? matDni(m) : '';
+  document.getElementById('mat-m-zona').value = m && tieneZona(m) ? String(m.zona) : '';
+  document.getElementById('mat-m-distrito').value = m ? (m.distrito || '') : '';
+  document.getElementById('mat-m-tipo').value = m ? (m.tipo || '') : '';
+  document.getElementById('mat-m-obs').value = m ? (m.obs || '') : '';
+  document.getElementById('mat-m-status').textContent = '';
+  document.getElementById('mat-modal-overlay').classList.add('open');
+}
+function matCerrar() { document.getElementById('mat-modal-overlay').classList.remove('open'); }
+async function matGuardar() {
+  const st = document.getElementById('mat-m-status');
+  const nombre = document.getElementById('mat-m-nombre').value.replace(/\s+/g, ' ').trim();
+  const apellidos = document.getElementById('mat-m-apellidos').value.replace(/\s+/g, ' ').trim();
+  const dni = limpiarDni(document.getElementById('mat-m-dni').value);
+  if (!nombre) { st.textContent = 'Escribe el nombre.'; return; }
+  const campos = { nombre, apellidos, zona: document.getElementById('mat-m-zona').value, distrito: document.getElementById('mat-m-distrito').value.trim(), tipo: document.getElementById('mat-m-tipo').value, obs: document.getElementById('mat-m-obs').value.trim() };
+  try {
+    if (matEditId) {
+      if (dni) campos.dniReal = dni;
+      await setDoc(doc(materialesCol, matEditId), campos, { merge: true });
+    } else {
+      const id = dni || matHashId(nombre, apellidos);
+      if (materiales.some(x => x.id === id)) { st.textContent = 'Esa persona ya está en la lista.'; return; }
+      await setDoc(doc(materialesCol, id), Object.assign(campos, { entregado: false, ord: Math.max(0, ...materiales.map(x => x.ord || 0)) + 1 }), { merge: true });
+    }
+    matCerrar();
+  } catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+
+// ----- Subir lista (Excel) -----
+async function matEscribirLote(items) {   // items: [[id, datos]]
+  for (let i = 0; i < items.length; i += 400) {
+    const b = writeBatch(db);
+    items.slice(i, i + 400).forEach(([id, d]) => b.set(doc(materialesCol, id), d, { merge: true }));
+    await b.commit();
+  }
+}
+function matImportar(ev) {
+  const file = ev.target.files[0], st = document.getElementById('mat-status');
+  if (!file) return;
+  if (typeof XLSX === 'undefined') { st.textContent = 'No se pudo cargar el lector de Excel. Intenta de nuevo.'; return; }
+  st.textContent = 'Leyendo archivo...';
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const limp = c => normalize(String(c == null ? '' : c).replace(/[  ​]/g, ' ')).replace(/\s+/g, ' ');
+      const alias = {
+        dni: ['dni', 'documento', 'nro dni', 'n dni'], nombre: ['nombre', 'nombres', 'nombre completo', 'apellidos y nombres', 'nombres y apellidos'],
+        apellidos: ['apellidos', 'apellido'], zona: ['zona'], distrito: ['distrito', 'distritos', 'distrito misionero'],
+        tipo: ['tipo', 'categoria', 'condicion', 'tipo de delegado', 'tipo de asistente', 'rol'],
+        entregado: ['entregado', 'entrega', 'recibio', 'recibido', 'material entregado', 'recibio material', 'material'],
+        obs: ['observacion', 'observaciones', 'nota', 'notas', 'comentario'], hora: ['hora', 'hora de entrega'],
+        num: ['n', 'no', 'nro', 'numero', 'n°', 'nº', 'n.']
+      };
+      const campoDe = c => Object.keys(alias).find(k => alias[k].includes(c));
+      const filas = [];
+      wb.SheetNames.forEach(nom => {
+        const raw = XLSX.utils.sheet_to_json(wb.Sheets[nom], { header: 1 });
+        let h = null, ini = 0;
+        for (let i = 0; i < Math.min(15, raw.length); i++) {
+          const f = (raw[i] || []).map(limp), campos = f.map(campoDe).filter(Boolean);
+          if (campos.includes('nombre')) { h = {}; ini = i + 1; f.forEach((c, ix) => { const k = campoDe(c); if (k && h[k] === undefined) h[k] = ix; }); break; }
+        }
+        if (!h) return;
+        const tipoHoja = parseTipo(nom);
+        raw.slice(ini).forEach(r => {
+          r = r || [];
+          const g = k => h[k] === undefined ? '' : r[h[k]];
+          const nombre = String(g('nombre') ?? '').replace(/[  ​]/g, ' ').replace(/\s+/g, ' ').trim();
+          if (!nombre) return;
+          filas.push({
+            nombre, apellidos: String(g('apellidos') ?? '').replace(/\s+/g, ' ').trim(), dni: limpiarDni(g('dni')), zona: parseZona(g('zona')),
+            distrito: String(g('distrito') ?? '').replace(/\s+/g, ' ').trim(), tipo: parseTipo(g('tipo')) || tipoHoja,
+            entregado: /^(si|s|x|1|true|ok|entregado|recibio|recibido|✓|✔)$/.test(limp(g('entregado'))),
+            obs: String(g('obs') ?? '').trim(), hora: String(g('hora') ?? '').trim(), num: g('num')
+          });
+        });
+      });
+      if (!filas.length) { st.textContent = 'No encontré personas. Revisa que el Excel tenga la columna «Nombre» (usa el formato que te di).'; return; }
+      const ids = new Map(), choques = []; let nuevos = 0, actualizados = 0, siguiente = Math.max(0, ...materiales.map(x => x.ord || 0)) + 1;
+      filas.forEach(f => {
+        const clave = matClave(f.nombre, f.apellidos);
+        const igual = (ta, tb) => { const A = ta.split(' ').filter(Boolean), B = tb.split(' ').filter(Boolean); return A.filter(t => B.includes(t)).length >= Math.min(2, A.length, B.length); };
+        let ex = (f.dni && materiales.find(x => x.id === f.dni || x.dniReal === f.dni)) || materiales.find(x => matClave(x.nombre, x.apellidos) === clave);
+        // Mismo DNI para personas distintas (error en el Excel): NO se mezclan; la segunda entra sin DNI y se avisa.
+        const dueno = f.dni && ids.get(f.dni);
+        if ((ex && f.dni && (ex.id === f.dni || ex.dniReal === f.dni) && !igual(matClave(ex.nombre, ex.apellidos), clave)) || (dueno && !igual(dueno.clave, clave))) {
+          choques.push(f.nombre + ' (DNI ' + f.dni + ')'); f.dni = ''; ex = materiales.find(x => matClave(x.nombre, x.apellidos) === clave) || null;
+        }
+        const id = ex ? ex.id : (f.dni || matHashId(f.nombre, f.apellidos));
+        const d = { nombre: f.nombre, apellidos: f.apellidos };
+        if (f.zona) d.zona = f.zona; if (f.distrito) d.distrito = f.distrito; if (f.tipo) d.tipo = f.tipo; if (f.obs) d.obs = f.obs;
+        if (f.dni && id !== f.dni) d.dniReal = f.dni;
+        if (f.num !== '' && f.num != null && !isNaN(f.num)) d.num = Number(f.num);
+        if (f.entregado) { d.entregado = true; if (f.hora) d.hora = f.hora; }
+        const ya = ids.get(id);
+        if (ya) { Object.assign(ya.d, d); return; }
+        if (ex) actualizados++; else { nuevos++; d.entregado = f.entregado; d.ord = siguiente++; }
+        ids.set(id, { d, clave });
+      });
+      st.textContent = 'Guardando ' + ids.size + ' personas...';
+      await matEscribirLote(Array.from(ids.entries()).map(([id, v]) => [id, v.d]));
+      st.textContent = '✓ ' + nuevos + ' nuevos, ' + actualizados + ' actualizados (los ya entregados se mantienen).' + (choques.length ? '\n⚠ DNI repetido en el Excel (cargados sin DNI): ' + choques.join('; ') : '');
+    } catch (err) { st.textContent = '⚠️ ' + (err && err.message ? err.message : err); }
+    ev.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+async function matTraerDelegados() {
+  const st = document.getElementById('mat-status');
+  const faltan = attendees.filter(a => !materiales.some(m => m.id === a.dni || (a.dniReal && (m.id === a.dniReal || m.dniReal === a.dniReal)) || matClave(m.nombre, m.apellidos) === matClave(a.nombre, a.apellidos)));
+  if (!faltan.length) { st.textContent = 'Todos los delegados registrados ya están en la lista de materiales.'; return; }
+  if (!confirm('Se copiarán ' + faltan.length + ' personas del registro a la lista de materiales.\nSolo se copian sus datos: no cambia la asistencia.\n¿Continuar?')) return;
+  let ord = Math.max(0, ...materiales.map(x => x.ord || 0)) + 1;
+  const items = faltan.map(a => { const d = { nombre: a.nombre || '', apellidos: a.apellidos || '', zona: a.zona ?? '', distrito: a.distrito || '', tipo: a.tipo || '', entregado: false, ord: ord++ }; if (a.dniReal) d.dniReal = a.dniReal; return [a.dni, d]; });
+  try { await matEscribirLote(items); st.textContent = '✓ ' + items.length + ' personas agregadas a la lista de materiales.'; }
+  catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+async function matVaciar() {
+  if (!materiales.length) return;
+  if (!confirm('¿Vaciar TODA la lista de materiales (' + materiales.length + ' personas)?\nNo afecta el registro de asistencia.')) return;
+  if (!confirm('Última confirmación: se perderá quién recibió material. ¿Vaciar la lista?')) return;
+  try {
+    for (let i = 0; i < materiales.length; i += 400) { const b = writeBatch(db); materiales.slice(i, i + 400).forEach(m => b.delete(doc(materialesCol, m.id))); await b.commit(); }
+    document.getElementById('mat-status').textContent = 'Lista vaciada.';
+  } catch (e) { showError('No se pudo vaciar: ' + (e && e.message ? e.message : e)); }
+}
+
+// ----- Formato (plantilla) e informe en Excel -----
+function matPlantilla() {
+  if (typeof XLSX === 'undefined') { alert('No se pudo cargar el módulo de Excel.'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([['N°', 'Nombre', 'Apellidos', 'DNI', 'Zona', 'Distrito', 'Tipo', 'Entregado', 'Observación']]);
+  ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 28 }, { wch: 12 }, { wch: 8 }, { wch: 24 }, { wch: 22 }, { wch: 12 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Lista de materiales');
+  const ins = XLSX.utils.aoa_to_sheet([['Instrucciones'], ['1. Llena una fila por persona. Solo el Nombre es obligatorio.'], ['2. DNI: 8 dígitos (si no tiene, déjalo vacío).'], ['3. Zona: 0 al 7.  Tipo: Delegado general, Delegado regular, Delegado adicional, Invitado, Invitado de institución.'], ['4. Entregado: escribe Sí si ya recibió su material (opcional; vacío = pendiente).'], ['5. Guarda y súbelo en Entrega de materiales → Subir lista.']]);
+  ins['!cols'] = [{ wch: 110 }];
+  XLSX.utils.book_append_sheet(wb, ins, 'Instrucciones');
+  XLSX.writeFile(wb, 'formato_entrega_materiales.xlsx');
+}
+function filaMat(m, i) {
+  return { 'N°': m.num || i + 1, DNI: matDni(m), Nombre: m.nombre || '', Apellidos: m.apellidos || '', Tipo: (TIPOS.find(t => t.k === m.tipo) || {}).label || '', Zona: tieneZona(m) ? (String(m.zona) === '0' ? '0 (Delegado general)' : m.zona) : '', Distrito: m.distrito || '', Material: m.entregado ? 'Entregado' : 'No entregado', Fecha: m.entregado ? (m.fecha || '') : '', 'Hora de entrega': m.entregado ? (m.hora || '') : '', Observación: m.obs || '' };
+}
+function exportMateriales(modo) {
+  if (typeof XLSX === 'undefined') { alert('No se pudo cargar el módulo de Excel.'); return; }
+  if (!materiales.length) { alert('La lista de materiales está vacía.'); return; }
+  const orden = (a, b) => (a.ord ?? 1e9) - (b.ord ?? 1e9) || fullName(a).localeCompare(fullName(b), 'es');
+  const ent = materiales.filter(m => m.entregado).sort((a, b) => ((a.fecha || '') + (a.hora || '')).localeCompare((b.fecha || '') + (b.hora || '')) || orden(a, b));
+  const pen = materiales.filter(m => !m.entregado).sort(orden);
+  const hoja = l => { const w = XLSX.utils.json_to_sheet(l.map(filaMat)); w['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 20 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 30 }]; return w; };
+  const wb = XLSX.utils.book_new(); let nombre;
+  if (modo === 'entregados') { XLSX.utils.book_append_sheet(wb, hoja(ent), 'Recibieron'); nombre = 'recibieron'; }
+  else if (modo === 'pendientes') { XLSX.utils.book_append_sheet(wb, hoja(pen), 'No recibieron'); nombre = 'no_recibieron'; }
+  else if (modo === 'filtrado') { if (!matUltimas.length) { alert('No hay nadie en la lista que estás viendo.'); return; } XLSX.utils.book_append_sheet(wb, hoja(matUltimas), 'Lista filtrada'); nombre = 'lista_filtrada'; }
+  else {
+    const res = [['Informe de entrega de materiales · Congreso 2026'], ['Generado', new Date().toLocaleString('es-PE')], [], ['En la lista', materiales.length], ['Entregados', ent.length], ['Pendientes', pen.length], ['Avance', Math.round(ent.length / materiales.length * 100) + '%'], [], ['POR TIPO', 'En lista', 'Entregados', 'Pendientes']];
+    TIPOS.map(t => ({ label: t.label, k: t.k })).concat([{ label: 'Sin clasificar', k: 'sin' }]).forEach(t => { const g = materiales.filter(m => (m.tipo || 'sin') === t.k); if (g.length) res.push([t.label, g.length, g.filter(m => m.entregado).length, g.filter(m => !m.entregado).length]); });
+    res.push([], ['POR ZONA', 'En lista', 'Entregados', 'Pendientes']);
+    ['0', '1', '2', '3', '4', '5', '6', '7', 'sin'].forEach(z => { const g = materiales.filter(m => z === 'sin' ? !tieneZona(m) : String(m.zona) === z); if (g.length) res.push([z === 'sin' ? 'Sin zona' : z === '0' ? 'Zona 0 (Delegados generales)' : 'Zona ' + z, g.length, g.filter(m => m.entregado).length, g.filter(m => !m.entregado).length]); });
+    const wr = XLSX.utils.aoa_to_sheet(res); wr['!cols'] = [{ wch: 32 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wr, 'Resumen');
+    XLSX.utils.book_append_sheet(wb, hoja(ent), 'Recibieron');
+    XLSX.utils.book_append_sheet(wb, hoja(pen), 'No recibieron');
+    XLSX.utils.book_append_sheet(wb, hoja(materiales.slice().sort(orden)), 'Todos');
+    nombre = 'informe_completo';
+  }
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  XLSX.writeFile(wb, 'materiales_' + nombre + '_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.xlsx');
+}
+Object.assign(window, { renderMateriales, matSetFiltro, matLimpiar, matToggle, matBorrar, matAbrir, matCerrar, matGuardar, matImportar, matTraerDelegados, matVaciar, matPlantilla, exportMateriales });
+
 // ===== Descargar la galería en PDF horizontal (una hoja por zona/grupo) =====
 function pdfCirculo(foto, iniciales) {
   return new Promise(resolve => {
@@ -3937,6 +4296,8 @@ function switchTab(tab) {
   document.getElementById('view-delegados').style.display = tab === 'delegados' ? 'block' : 'none';
   document.getElementById('view-galeria').style.display = tab === 'galeria' ? 'block' : 'none';
   document.getElementById('view-fase').style.display = tab === 'fase' ? 'block' : 'none';
+  document.getElementById('view-materiales').style.display = tab === 'materiales' ? 'block' : 'none';
+  if (tab === 'materiales') renderMateriales();
   if (tab === 'galeria') renderGaleria();
   if (tab === 'fase') renderFase();
   if (tab !== 'registro' && scanning) stopScanner();
