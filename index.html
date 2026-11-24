@@ -623,7 +623,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 24 nov · DNI corregido</div>
+    <div class="sidebar-version">Versión 24 nov · fotos sin IA</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -877,15 +877,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <button onclick="document.getElementById('fotos-carpeta').click()">📁 Subir carpeta (con subcarpetas por zona)</button>
       <input type="file" id="fotos-lote" accept="image/*" multiple style="display:none;" onchange="subirFotosLote(event)">
       <input type="file" id="fotos-carpeta" webkitdirectory multiple style="display:none;" onchange="subirFotosLote(event)">
-      <label style="display:block;margin-top:10px;"><input type="checkbox" id="fotos-ia" checked> ✨ Poner fondo blanco con IA al subir (más lento, ~2 s por foto)</label>
       <p class="muted" id="fotos-status" style="margin-top:10px; margin-bottom:0;"></p>
-      <hr style="border:0;border-top:1px solid var(--border);margin:14px 0;">
-      <div class="card-title" style="font-size:16px;margin-bottom:6px;">✨ Fondo blanco en las fotos ya subidas</div>
-      <p class="muted" style="margin-top:0;">Primero te muestra una prueba con 4 fotos (antes y después). Si te gusta, lo aplica a todas. Guarda una copia para poder volver atrás.</p>
-      <button class="celeste" onclick="iaProbar()">✨ Probar con 4 fotos</button>
-      <button onclick="iaRestaurar()">↩ Restaurar originales</button>
-      <button id="ia-cancelar" style="display:none;" onclick="iaCancelarSet()">Detener</button>
-      <p class="muted" id="ia-estado" style="margin-top:10px; margin-bottom:0;"></p>
     </div>
     <div class="card">
       <div class="card-eyebrow">CREDENCIALES</div>
@@ -935,6 +927,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="gal-fila gal-acciones">
         <button onclick="galDescargarPDF(false)">⬇ PDF de esta hoja</button>
         <button class="celeste" onclick="galDescargarPDF(true)">⬇ PDF de todas las zonas</button>
+        <div class="ms" id="gal-f-tipo" style="min-width:210px;"></div>
         <input type="text" id="gal-buscar" placeholder="Buscar por nombre..." autocomplete="off" oninput="renderGaleria()" style="width:230px; padding:7px 12px; font-size:13px;" />
         <span class="muted" id="gal-pdf-estado"></span>
       </div>
@@ -946,7 +939,6 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <button onclick="document.getElementById('gal-lote-input').click()">📷 Varias fotos (nombre = nombre del archivo)</button>
       <input type="file" id="gal-foto-input" accept="image/*" style="display:none;" onchange="galElegirFoto(event)">
       <input type="file" id="gal-lote-input" accept="image/*" multiple style="display:none;" onchange="galLote(event)">
-      <label style="font-size:13px;"><input type="checkbox" id="gal-ia" checked> ✨ Fondo blanco con IA (varias fotos)</label>
       <div class="muted" id="gal-estado" style="width:100%;"></div>
     </div>
     <div class="card"><div class="gal-grid" id="gal-grid"></div></div>
@@ -1114,8 +1106,6 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <label>Izquierda ↔ derecha <input type="range" id="enc-x" min="0" max="100" style="width:100%" oninput="encCambio()"></label>
       <label>Arriba ↕ abajo <input type="range" id="enc-y" min="0" max="100" style="width:100%" oninput="encCambio()"></label>
     </div>
-    <label style="display:block;margin-top:10px;font-size:13px;text-align:left;"><input type="checkbox" id="enc-ia" checked onchange="encToggleIA()"> ✨ Fondo blanco con IA</label>
-    <div class="muted" id="enc-ia-msg" style="font-size:12px;text-align:left;min-height:16px;"></div>
     <div class="fbtns" style="margin-top:10px;">
       <button onclick="encCompleta()">Foto completa</button>
       <button onclick="encLlenar()">Llenar círculo</button>
@@ -3330,7 +3320,7 @@ async function fotoABlanco(dataUrl) {
 
 // Dibuja la foto en un cuadrado SIEMPRE sobre fondo blanco (los PNG transparentes ya no salen negros).
 // zoom: 1 = llena el cuadro; menos de 1 = foto completa sin recortar. px/py: 0..1 posición del encuadre.
-const FOTO_T = 240;
+const FOTO_T = 400;
 function dibujarFoto(ctx, img, T, zoom, px, py) {
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, T, T);
   const base = Math.max(T / img.width, T / img.height);
@@ -3357,7 +3347,7 @@ async function reducirFoto(file, ia) {
   const c = document.createElement('canvas'); c.width = FOTO_T; c.height = FOTO_T;
   dibujarFoto(c.getContext('2d'), img, FOTO_T, 1, 0.5, 0.05);
   URL.revokeObjectURL(img._url);
-  return c.toDataURL('image/jpeg', 0.8);
+  return c.toDataURL('image/jpeg', 0.9);
 }
 // Con ventana para encuadrar (foto individual): zoom, mover y "foto completa"
 let encImg = null, encSt = null, encResolver = null, encOrig = null, encCut = null, encFile = null, encOcupado = false;
@@ -3378,8 +3368,8 @@ async function encToggleIA() {
 function encuadrarFoto(file) {
   return cargarImg(file).then(img => new Promise(resolve => {
     encImg = img; encOrig = img; encCut = null; encFile = file; encResolver = resolve; ultimaIA = false;
-    document.getElementById('enc-ia-msg').textContent = '';
-    setTimeout(() => { if (document.getElementById('enc-ia').checked) encToggleIA(); }, 50);
+    
+    
     encSt = { zoom: 1, px: 0.5, py: 0.05 };
     encSt.minZoom = Math.min(img.width, img.height) / Math.max(img.width, img.height); // foto completa
     const z = document.getElementById('enc-zoom');
@@ -3410,7 +3400,7 @@ function encCerrar(ok) {
   if (ok && encImg) {
     const c = document.createElement('canvas'); c.width = FOTO_T; c.height = FOTO_T;
     dibujarFoto(c.getContext('2d'), encImg, FOTO_T, encSt.zoom, encSt.px, encSt.py);
-    out = c.toDataURL('image/jpeg', 0.8);
+    out = c.toDataURL('image/jpeg', 0.9);
   }
   if (encOrig) URL.revokeObjectURL(encOrig._url);
   if (encCut) URL.revokeObjectURL(encCut._url);
@@ -3506,7 +3496,7 @@ function emparejarFoto(file, porDni) {
   return { a: null };
 }
 
-function iaLote(id) { const e = document.getElementById(id); return !!(e && e.checked); }
+function iaLote(id) { return false; }
 async function subirFotosLote(ev) {
   const files = Array.from(ev.target.files || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name));
   ev.target.value = '';
@@ -3890,9 +3880,14 @@ function pdfCirculo(foto, iniciales) {
 }
 
 // «Delegados generales» = los marcados como tipo general en el Excel + los de zona 0
-function galPersonas(tab) {
+function galBase(tab) {
   if (tab.k === 'gen') return attendees.filter(a => a.tipo === 'general' || String(a.zona ?? '') === '0');
   return attendees.filter(a => String(a.zona ?? '') === tab.zona);
+}
+function galPersonas(tab) {
+  const t = msGet('gal-f-tipo');
+  const b = galBase(tab);
+  return t.length ? b.filter(a => t.includes(a.tipo || 'sin')) : b;
 }
 function galItemsDe(tab) {
   if (tab.manual) {
@@ -4032,6 +4027,10 @@ function renderGaleria() {
   };
   document.getElementById('gal-tabs-zonas').innerHTML = GAL_TABS.filter(x => x.k === 'gen').concat(GAL_TABS.filter(x => /^z\d$/.test(x.k))).map(pill).join('');
   document.getElementById('gal-tabs-otros').innerHTML = GAL_TABS.filter(x => !/^z\d$/.test(x.k) && x.k !== 'gen').map(pill).join('');
+  const baseT = tab.manual ? [] : galBase(tab);
+  msSetOpts('gal-f-tipo', 'Todos los tipos', TIPOS.map(t => [t.k, t.label, baseT.filter(a => a.tipo === t.k).length])
+    .concat(baseT.some(a => !a.tipo) ? [['sin', 'Sin clasificar', baseT.filter(a => !a.tipo).length]] : []), renderGaleria);
+  const ft = document.getElementById('gal-f-tipo'); if (ft) ft.style.display = tab.manual ? 'none' : '';
   document.getElementById('gal-titulo').textContent = tab.t;
   document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
 
