@@ -966,7 +966,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 26 nov · logos 10</div>
+    <div class="sidebar-version">Versión 26 nov · logos 11</div>
     <div class="sesion-box"><div>Sesión<b id="sesion-nombre">—</b></div><button onclick="loginSalir()">Salir</button></div>
 
     <div class="nav-group nav-reg">
@@ -4962,11 +4962,11 @@ function renderDelegList() {
 
 const CABEZAS = {
   org: [
-    { nombre: 'Pr. Daniel Montalbán', rol: 'Presidente de la UPN', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) },
+    { nombre: 'Pr. Daniel Montalván', rol: 'Presidente de la UPN', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) },
     { nombre: 'Pr. Alberto Carranza', rol: 'Presidente de la MiCOP', ini: 'AC', match: n => n.includes('alberto') && n.includes('carranza') }
   ],
   nom: [
-    { nombre: 'Pr. Daniel Montalbán', rol: 'Presidente de la Comisión', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) }
+    { nombre: 'Pr. Daniel Montalván', rol: 'Presidente de la Comisión', ini: 'DM', match: n => n.includes('daniel') && (n.includes('montalb') || n.includes('montalv')) }
   ]
 };
 let pdPrev = null;   // qué ya se mostró, para animar solo a los nuevos
@@ -5024,7 +5024,7 @@ function renderProyDelegados() {
       '</div><div class="pd-zona">' + escapeHtml(pdZonaTxt(a)) + '</div></div></div>';
   }).join('');
   // Lugares que faltan por elegir (círculos vacíos), para ver de un vistazo cuánto falta
-  const faltan = meta ? Math.max(0, Math.min(meta - totalElegidos, 80)) : 0;
+  const faltan = 0;   // ya no se muestran lugares vacíos: los delegados aparecen uno a uno al elegirse
   grid.innerHTML += Array.from({ length: faltan }, () => '<div class="pd-item vacio"><div class="pd-card"><div class="pd-av vacio">+</div><div class="pd-nombre">Por elegir</div><div class="pd-zona">&nbsp;</div></div></div>').join('');
   pdPrev = { key: comActual, set: nuevoSet };
   document.getElementById('proy-deleg-empty').style.display = (delegados.length + cabezas.length) === 0 && !faltan ? 'block' : 'none';
