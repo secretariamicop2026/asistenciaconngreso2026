@@ -173,6 +173,21 @@
   #aviso-llegada .av-n { font-size:19px; font-weight:800; line-height:1.2; overflow-wrap:anywhere; }
   #aviso-llegada .av-d { font-size:13px; opacity:.85; margin-top:2px; }
   #aviso-llegada button { flex:none; padding:8px 12px; font-size:13px; }
+  #login { position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; background:radial-gradient(1200px 700px at 50% 0%, #0c3a78 0%, #04204a 60%, #031530 100%); }
+  #login.ver { display:flex; }
+  #login .lg-box { width:min(100%,380px); background:rgba(9,38,86,.92); border:1px solid rgba(120,180,230,.35); border-radius:18px; padding:26px 22px; box-shadow:0 20px 60px rgba(0,0,0,.5); text-align:left; }
+  #login h2 { margin:0 0 4px; font-size:24px; color:#fff; }
+  #login p { margin:0 0 16px; color:#9db9d6; font-size:14px; }
+  #login label { display:block; font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#9db9d6; margin:12px 0 6px; }
+  #login input { width:100%; box-sizing:border-box; padding:13px 14px; font-size:16px; }
+  #login button { width:100%; margin-top:18px; padding:13px; font-size:16px; }
+  #login .lg-err { min-height:20px; margin-top:12px; color:#ff9aa5; font-size:14px; font-weight:600; }
+  .sesion-box { margin:0 0 12px; padding:9px 12px; border-radius:10px; background:rgba(120,180,230,.1); font-size:12px; color:#cfe3f7; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .sesion-box b { display:block; font-size:13px; color:#fff; overflow-wrap:anywhere; }
+  .sesion-box button { padding:5px 10px; font-size:12px; flex:none; }
+  .solo-registro .solo-admin, .solo-registro .nav-group:not(.nav-reg), .solo-registro .quorum-edit, .solo-registro #dup-banner, .solo-registro .filtros-fila:first-child, .solo-registro .sexo-tag { display:none !important; }
+  .solo-registro .sexo-tag { pointer-events:none; }
+  .solo-registro .avatar, .solo-registro .invitado-name { cursor:default !important; pointer-events:none; }
   #scan-feedback { display: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
   .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
   .badge.presente { background: var(--verde-bg); color: var(--verde); }
@@ -622,6 +637,18 @@ function iniciarSistema() {
 document.addEventListener('keydown', function (e) { var s = document.getElementById('splash'); if (s && s.style.display !== 'none' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); iniciarSistema(); } });
 </script>
 
+<div id="login">
+  <div class="lg-box">
+    <h2>Control de asistencia</h2>
+    <p>Congreso 2026 · MiCOP. Ingresa con tu usuario.</p>
+    <label for="lg-user">Usuario</label>
+    <input type="text" id="lg-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="ejemplo: nombre.apellido" onkeydown="if(event.key==='Enter')document.getElementById('lg-pass').focus()">
+    <label for="lg-pass">Clave</label>
+    <input type="password" id="lg-pass" autocomplete="current-password" placeholder="Tu clave" onkeydown="if(event.key==='Enter')loginEntrar()">
+    <button class="primary" id="lg-btn" onclick="loginEntrar()">Entrar</button>
+    <div class="lg-err" id="lg-err"></div>
+  </div>
+</div>
 <div class="shell">
   <div class="mobile-topbar">
     <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
@@ -633,9 +660,10 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 24 nov · aviso de llegada</div>
+    <div class="sidebar-version">Versión 25 nov · usuarios</div>
+    <div class="sesion-box"><div>Sesión<b id="sesion-nombre">—</b></div><button onclick="loginSalir()">Salir</button></div>
 
-    <div class="nav-group">
+    <div class="nav-group nav-reg">
       <div class="nav-pill celeste">REGISTRO</div>
       <div class="nav-item" onclick="switchTab('registro'); setFilter('all'); closeMobileMenu()">Todos</div>
       <div class="nav-item" onclick="switchTab('registro'); setFilter('in'); closeMobileMenu()">Presentes</div>
@@ -3134,6 +3162,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/fireba
 import {
   getFirestore, collection, doc, setDoc, onSnapshot, writeBatch, getDocs, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB7jjGEHLS5Ai0qP4v9gEK5KT8XqVKtdr0",
@@ -3147,6 +3176,39 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
+
+// ===== Acceso con usuario y clave =====
+// Administradoras (control total). Cualquier otro usuario creado en Firebase solo puede marcar asistencia.
+// IMPORTANTE: la misma lista debe estar en las reglas de Firestore (archivo firestore.rules).
+const ADMIN_USUARIOS = ['pierina.avila'];
+const DOMINIO_USUARIO = '@micop.app';
+const auth = getAuth(fbApp);
+const claveCorreo = u => { u = String(u || '').trim().toLowerCase().replace(/\s+/g, ''); return u.includes('@') ? u : u + DOMINIO_USUARIO; };
+const usuarioDeCorreo = c => String(c || '').replace(DOMINIO_USUARIO, '');
+async function loginEntrar() {
+  const u = document.getElementById('lg-user').value, pw = document.getElementById('lg-pass').value;
+  const err = document.getElementById('lg-err'), bt = document.getElementById('lg-btn');
+  if (!u.trim() || !pw) { err.textContent = 'Escribe tu usuario y tu clave.'; return; }
+  bt.disabled = true; err.textContent = 'Entrando...';
+  try { await signInWithEmailAndPassword(auth, claveCorreo(u), pw); err.textContent = ''; }
+  catch (e) {
+    const c = e && e.code || '';
+    err.textContent = /network/.test(c) ? 'Sin conexión a internet. Revisa tu señal e intenta de nuevo.' : /too-many/.test(c) ? 'Demasiados intentos. Espera unos minutos.' : 'Usuario o clave incorrectos.';
+  }
+  bt.disabled = false;
+}
+async function loginSalir() { try { await signOut(auth); } catch (e) {} location.reload(); }
+window.loginEntrar = loginEntrar; window.loginSalir = loginSalir;
+const usuarioActual = await new Promise(resolve => {
+  const un = onAuthStateChanged(auth, u => {
+    if (u) { un(); document.getElementById('login').classList.remove('ver'); resolve(u); }
+    else { document.getElementById('login').classList.add('ver'); }
+  });
+});
+const ES_ADMIN = ADMIN_USUARIOS.map(claveCorreo).includes(String(usuarioActual.email || '').toLowerCase());
+const SOLO_REGISTRO = !ES_ADMIN;
+if (SOLO_REGISTRO) document.body.classList.add('solo-registro');
+document.getElementById('sesion-nombre').textContent = usuarioDeCorreo(usuarioActual.email) + (ES_ADMIN ? ' (administradora)' : ' (solo registro)');
 const asistentesCol = collection(db, "asistentes");
 const quorumDocRef = doc(db, "config", "quorum");
 
@@ -4669,9 +4731,9 @@ function renderTable() {
       <td class="acc-cell"><div class="acc-fila">${a.llego
         ? `<button class="row-action-btn desmarcar" onclick="toggleCheckIn('${a.dni}')">Desmarcar</button>`
         : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}
-        <button class="row-action-btn" title="Imprimir solo el QR de esta persona" onclick="printCredentials('${a.dni}')">🖨 QR</button>
-        <button class="row-action-btn" title="Editar nombre, DNI, fase etaria, sexo…" onclick="openEditModal('${a.dni}')">✏</button>
-        <button class="row-action-btn desmarcar" title="Eliminar a esta persona de la lista" onclick="deletePerson('${a.dni}')">🗑</button></div></td>
+        <button class="row-action-btn solo-admin" title="Imprimir solo el QR de esta persona" onclick="printCredentials('${a.dni}')">🖨 QR</button>
+        <button class="row-action-btn solo-admin" title="Editar nombre, DNI, fase etaria, sexo…" onclick="openEditModal('${a.dni}')">✏</button>
+        <button class="row-action-btn desmarcar solo-admin" title="Eliminar a esta persona de la lista" onclick="deletePerson('${a.dni}')">🗑</button></div></td>
     </tr>
   `).join('');
 }
@@ -5484,6 +5546,14 @@ window.guardarFotoIndividual = guardarFotoIndividual;
 window.encToggleIA = encToggleIA; window.iaProbar = iaProbar; window.iaAplicar = iaAplicar; window.iaCerrarPrev = iaCerrarPrev; window.iaRestaurar = iaRestaurar; window.iaCancelarSet = () => { iaCancelar = true; };
 window.encCambio = encCambio; window.encCompleta = encCompleta; window.encLlenar = encLlenar; window.encCerrar = encCerrar;
 window.subirFotosLote = subirFotosLote;
+// Usuarios de "solo registro": además de ocultar los botones, se bloquean las acciones que cambian datos.
+if (SOLO_REGISTRO) {
+  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','proyectarComision','saveEditPerson','openGal'].forEach(n => {
+    if (typeof window[n] === 'function') window[n] = function () { avisoLlegada('rojo', 'Sin permiso', null, 'Tu usuario solo puede marcar asistencia.', null, 3500); };
+  });
+  const _sw = window.switchTab;
+  window.switchTab = function (t) { if (t !== 'registro') return; return _sw(t); };
+}
 </script>
 <div id="aviso-llegada" role="status" aria-live="polite"></div>
 </body>
