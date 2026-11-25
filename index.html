@@ -163,6 +163,16 @@
   .invitado-name { font-weight: 600; font-size: 14px; }
   .invitado-num { font-size: 11px; color: var(--text-muted); }
   .num-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 8px; background: var(--celeste-bg); color: var(--celeste); font-weight: 700; font-size: 13px; }
+  #aviso-llegada { position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-140%); z-index:9000; width:min(94vw,520px); box-sizing:border-box; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#0b2a22; border:2px solid #3dbf93; color:#eafff6; box-shadow:0 12px 40px rgba(0,0,0,.55); transition:transform .25s ease; }
+  #aviso-llegada.ver { transform:translateX(-50%) translateY(0); }
+  #aviso-llegada.aviso-amb { background:#33260a; border-color:#e2a64a; color:#fff3dc; }
+  #aviso-llegada.aviso-rojo { background:#3a1218; border-color:#e5646f; color:#ffe9eb; }
+  #aviso-llegada .av-ico { font-size:28px; line-height:1; flex:none; }
+  #aviso-llegada .av-txt { flex:1; min-width:0; }
+  #aviso-llegada .av-t { font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.85; }
+  #aviso-llegada .av-n { font-size:19px; font-weight:800; line-height:1.2; overflow-wrap:anywhere; }
+  #aviso-llegada .av-d { font-size:13px; opacity:.85; margin-top:2px; }
+  #aviso-llegada button { flex:none; padding:8px 12px; font-size:13px; }
   #scan-feedback { display: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
   .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
   .badge.presente { background: var(--verde-bg); color: var(--verde); }
@@ -623,7 +633,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 24 nov · fotos sin IA</div>
+    <div class="sidebar-version">Versión 24 nov · aviso de llegada</div>
 
     <div class="nav-group">
       <div class="nav-pill celeste">REGISTRO</div>
@@ -4677,14 +4687,34 @@ async function cycleSexo(dni) {
   }
 }
 
+function avisoLlegada(tipo, titulo, a, extra, dni, ms) {
+  const el = document.getElementById('aviso-llegada');
+  if (!el) return;
+  const ico = tipo === 'ok' ? '✅' : tipo === 'amb' ? '⚠️' : '⛔';
+  const det = a ? [a.dniReal || (String(a.dni).startsWith('SD-') ? 'Sin DNI' : a.dni), tieneZona(a) ? 'Zona ' + a.zona : 'Sin zona', a.distrito || ''].filter(Boolean).join(' · ') : '';
+  el.className = (tipo === 'amb' ? 'aviso-amb ' : tipo === 'rojo' ? 'aviso-rojo ' : '');
+  el.innerHTML = '<div class="av-ico">' + ico + '</div><div class="av-txt"><div class="av-t">' + escapeHtml(titulo) + '</div>' +
+    '<div class="av-n">' + escapeHtml(a ? fullName(a) : (extra || '')) + '</div>' +
+    (a ? '<div class="av-d">' + escapeHtml(det) + (extra ? ' · ' + escapeHtml(extra) : '') + '</div>' : '') + '</div>' +
+    (dni ? '<button onclick="avisoDeshacer(\'' + String(dni).replace(/'/g, '') + '\')">Deshacer</button>' : '');
+  void el.offsetWidth; el.classList.add('ver');
+  clearTimeout(avisoLlegada._t);
+  avisoLlegada._t = setTimeout(() => el.classList.remove('ver'), ms || 4500);
+}
+function avisoDeshacer(dni) { document.getElementById('aviso-llegada').classList.remove('ver'); toggleCheckIn(dni); }
+window.avisoDeshacer = avisoDeshacer;
 async function toggleCheckIn(dni) {
   const person = attendees.find(a => a.dni === dni);
   if (!person) return;
+  const marcando = !person.llego;
+  const hora = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   try {
     await setDoc(doc(asistentesCol, dni), {
-      llego: !person.llego,
-      hora: !person.llego ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : null
+      llego: marcando,
+      hora: marcando ? hora : null
     }, { merge: true });
+    if (marcando) avisoLlegada('ok', 'Llegada registrada', person, hora, dni);
+    else avisoLlegada('amb', 'Se quitó la llegada de', person, '', dni);
   } catch (e) {
     showError('⚠️ No se pudo actualizar. ' + (e && e.message ? e.message : e));
   }
@@ -4727,10 +4757,12 @@ async function processCode(rawText) {
 
   if (!person) {
     showScanFeedback('Código no reconocido, no coincide con ningún DNI', false);
+    avisoLlegada('rojo', 'Código no reconocido', null, 'No coincide con ningún DNI', null, 5000);
     return;
   }
   if (person.llego) {
     showScanFeedback(fullName(person) + ' ya había registrado su llegada (' + (person.hora || '') + ')', true);
+    avisoLlegada('amb', 'Ya estaba registrado', person, 'llegó a las ' + (person.hora || '—'), null, 5000);
     return;
   }
   await toggleCheckIn(person.dni);
@@ -5453,5 +5485,6 @@ window.encToggleIA = encToggleIA; window.iaProbar = iaProbar; window.iaAplicar =
 window.encCambio = encCambio; window.encCompleta = encCompleta; window.encLlenar = encLlenar; window.encCerrar = encCerrar;
 window.subirFotosLote = subirFotosLote;
 </script>
+<div id="aviso-llegada" role="status" aria-live="polite"></div>
 </body>
 </html>
