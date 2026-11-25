@@ -667,7 +667,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 25 nov · comunicaciones</div>
+    <div class="sidebar-version">Versión 25 nov · credenciales</div>
     <div class="sesion-box"><div>Sesión<b id="sesion-nombre">—</b></div><button onclick="loginSalir()">Salir</button></div>
 
     <div class="nav-group nav-reg">
@@ -968,19 +968,24 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     </div>
     <div class="card gal-nav">
       <div class="gal-fila"><div class="gal-etq">Zonas</div><div class="gal-pills" id="gal-tabs-zonas"></div></div>
-      <div class="gal-fila"><div class="gal-etq">Otros grupos</div><div class="gal-pills" id="gal-tabs-otros"></div></div>
+      <div class="gal-fila"><div class="gal-etq">Tipo de credencial</div><div class="gal-pills" id="gal-tabs-otros"></div></div>
       <div class="gal-fila gal-acciones">
         <button onclick="galDescargarPDF(false)">⬇ PDF de esta hoja</button>
         <button class="celeste" onclick="galDescargarPDF(true)">⬇ PDF de todas las zonas</button>
         <div class="ms" id="gal-f-tipo" style="min-width:210px;"></div>
+        <div class="ms" id="gal-f-zona" style="min-width:190px;display:none;"></div>
         <input type="text" id="gal-buscar" placeholder="Buscar por nombre..." autocomplete="off" oninput="renderGaleria()" style="width:230px; padding:7px 12px; font-size:13px;" />
         <span class="muted" id="gal-pdf-estado"></span>
       </div>
+      <div class="gal-fila" id="gal-resumen" style="display:none;"></div>
     </div>
     <div class="card" id="gal-toolbar" style="display:none; gap:8px; flex-wrap:wrap; align-items:center;">
       <input type="text" id="gal-nombre-nuevo" placeholder="Nombre completo..." style="flex:1; min-width:200px;" autocomplete="off" onkeydown="if(event.key==='Enter')galAgregar()" />
       <button onclick="document.getElementById('gal-foto-input').click()">📷 Foto</button>
+      <select id="gal-zona-nuevo" title="Zona" style="width:110px;flex:none;"><option value="">Zona…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
       <button class="celeste" onclick="galAgregar()">+ Agregar</button>
+      <button onclick="document.getElementById('gal-cred-input').click()">⬆ Cargar lista de credenciales (Excel)</button>
+      <input type="file" id="gal-cred-input" accept=".xlsx,.xls" style="display:none;" onchange="galImportarCred(event)">
       <button onclick="document.getElementById('gal-lote-input').click()">📷 Varias fotos (nombre = nombre del archivo)</button>
       <input type="file" id="gal-foto-input" accept="image/*" style="display:none;" onchange="galElegirFoto(event)">
       <input type="file" id="gal-lote-input" accept="image/*" multiple style="display:none;" onchange="galLote(event)">
@@ -1117,9 +1122,10 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
 <div class="foto-overlay" id="gal-overlay" onclick="if(event.target===this)closeGal()">
   <div class="foto-box">
     <div class="grande" id="gal-grande"></div>
-    <input type="text" id="gal-nombre-edit" style="width:100%; text-align:center; font-weight:700; margin-bottom:12px;" autocomplete="off" />
+    <input type="text" id="gal-nombre-edit" style="width:100%; text-align:center; font-weight:700; margin-bottom:8px;" autocomplete="off" />
+    <select id="gal-zona-edit" style="width:100%; margin-bottom:12px;"><option value="">Sin zona</option><option value="1">Zona 1</option><option value="2">Zona 2</option><option value="3">Zona 3</option><option value="4">Zona 4</option><option value="5">Zona 5</option><option value="6">Zona 6</option><option value="7">Zona 7</option></select>
     <div class="fbtns">
-      <button class="celeste" onclick="galGuardarNombre()">Guardar nombre</button>
+      <button class="celeste" onclick="galGuardarNombre()">Guardar</button>
       <button onclick="document.getElementById('gal-cambiar-input').click()">📷 Cambiar foto</button>
       <button style="background:transparent;color:var(--rojo);border-color:var(--rojo);" onclick="galEliminar()">Eliminar</button>
       <button onclick="closeGal()">Cerrar</button>
@@ -3669,9 +3675,9 @@ const GAL_TABS = [
   { k: 'z4', t: 'Zona 4', zona: '4' }, { k: 'z5', t: 'Zona 5', zona: '5' }, { k: 'z6', t: 'Zona 6', zona: '6' },
   { k: 'z7', t: 'Zona 7', zona: '7' },
   { k: 'gen', t: 'Delegados generales (Zona 0)', corto: 'Zona 0 · Delegados generales', zona: '0', color: '#e0ae62' },
-  { k: 'mis', t: 'Obreros con credencial misionera', corto: 'Credencial misionera', manual: true, color: '#5dc7a1' },
-  { k: 'min', t: 'Pastores con credencial ministerial', corto: 'Credencial ministerial', manual: true, color: '#b39cf5' },
-  { k: 'lic', t: 'Pastores con licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' }
+  { k: 'mis', t: 'Credencial misionera', corto: 'Credencial misionera', manual: true, color: '#5dc7a1' },
+  { k: 'min', t: 'Credencial ministerial', corto: 'Credencial ministerial', manual: true, color: '#b39cf5' },
+  { k: 'lic', t: 'Licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' }
 ];
 onSnapshot(galeriaCol, (snap) => {
   galeria = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -3964,6 +3970,22 @@ function pdfCirculo(foto, iniciales) {
 }
 
 // «Delegados generales» = los marcados como tipo general en el Excel + los de zona 0
+// Credenciales (misionera / ministerial / licencia): se filtran por zona y toman la foto de la persona registrada si existe
+function galZonaDe(g) { return g.zona !== undefined && g.zona !== null && String(g.zona).trim() !== '' ? String(g.zona).trim() : 'sin'; }
+function galManual(tab) {
+  const z = msGet('gal-f-zona');
+  return galeria.filter(g => g.grupo === tab.k && (!z.length || z.includes(galZonaDe(g)))).sort((a, b) => (Number(a.zona) || 99) - (Number(b.zona) || 99) || (a.ts || 0) - (b.ts || 0));
+}
+function galIndiceAsist() {
+  const porDni = new Map(), porClave = new Map();
+  attendees.forEach(a => { if (!a.foto) return; porDni.set(a.dni, a); if (a.dniReal) porDni.set(a.dniReal, a); const k = matClave(a.nombre, a.apellidos); if (k && !porClave.has(k)) porClave.set(k, a); });
+  return { porDni, porClave };
+}
+function fotoCred(g, ix) {
+  if (g.foto) return g.foto;
+  const a = (g.dniReal && ix.porDni.get(g.dniReal)) || ix.porClave.get(matClave(g.nombre, '')) || null;
+  return a ? a.foto : '';
+}
 function galBase(tab) {
   if (tab.k === 'gen') return attendees.filter(a => a.tipo === 'general' || String(a.zona ?? '') === '0');
   return attendees.filter(a => String(a.zona ?? '') === tab.zona);
@@ -3975,8 +3997,8 @@ function galPersonas(tab) {
 }
 function galItemsDe(tab) {
   if (tab.manual) {
-    return galeria.filter(g => g.grupo === tab.k).sort((a, b) => (a.ts || 0) - (b.ts || 0))
-      .map(g => ({ nombre: g.nombre, foto: g.foto, ini: inicNombre(g.nombre) }));
+    const ixc = galIndiceAsist();
+    return galManual(tab).map(g => ({ nombre: g.nombre, foto: fotoCred(g, ixc), ini: inicNombre(g.nombre) }));
   }
   return galPersonas(tab).sort((a, b) => fullName(a).localeCompare(fullName(b)))
     .map(a => ({ nombre: fullName(a), foto: a.foto, ini: initials(a) }));
@@ -4037,6 +4059,53 @@ function inicNombre(n) {
   return String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
 }
 function galSel(k) { galTab = k; renderGaleria(); }
+// Cargar el Excel de credenciales (hojas "tipo credencial" / "administradores credencial"): clasifica por el texto de la columna TIPO.
+function galParseCred(wb) {
+  const out = [], vistos = new Set();
+  const tipoDe = v => { const t = normalize(String(v == null ? '' : v)).trim(); if (/^licencia ministerial$/.test(t)) return 'lic'; if (/^credencial ministerial$/.test(t)) return 'min'; if (/^credencial misionera$/.test(t)) return 'mis'; return ''; };
+  const zonaDe = v => { const t = String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, '').replace('ZONA', ''); const rom = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7 }; if (/^\d$/.test(t)) return t; return rom[t] ? String(rom[t]) : ''; };
+  // Se leen solo las hojas con "credencial" en el nombre (las otras repiten a las mismas personas); si no hay ninguna, se leen todas.
+  const hojas = wb.SheetNames.filter(n => /credencial/i.test(n)); 
+  (hojas.length ? hojas : wb.SheetNames).forEach(sn => {
+    XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null, raw: true }).forEach(r => {
+      r.forEach((cel, ti) => { if (!tipoDe(cel) || ti < 7) return;
+      const nombres = String(r[ti - 6] || '').trim(), apellidos = String(r[ti - 5] || '').trim();
+      const nombre = (nombres + ' ' + apellidos).replace(/\s+/g, ' ').trim(); if (!nombre) return;
+      const dni = String(r[ti - 1] == null ? '' : r[ti - 1]).replace(/\D/g, '').padStart(r[ti - 1] ? 8 : 0, '0');
+      const g = { grupo: tipoDe(r[ti]), nombre, zona: zonaDe(r[ti - 10]) || zonaDe(r[ti - 9]), distrito: String(r[ti - 9] || '').replace(/\s+/g, ' ').trim(), funcion: String(r[ti - 8] || '').replace(/\s+/g, ' ').trim(), dniReal: dni };
+      if (/zona/i.test(g.distrito)) g.distrito = '';
+      const k = g.grupo + '|' + matClave(nombre, '');
+      if (vistos.has(k)) return; vistos.add(k); out.push(g);
+      });
+    });
+  });
+  return out;
+}
+async function galImportarCred(ev) {
+  const f = ev.target.files[0]; ev.target.value = '';
+  const st = document.getElementById('gal-estado');
+  if (!f) return;
+  if (typeof XLSX === 'undefined') { st.textContent = '⚠️ No se pudo cargar el módulo de Excel.'; return; }
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const lista = galParseCred(wb);
+    if (!lista.length) { st.textContent = '⚠️ No encontré personas con "Credencial ministerial / misionera" o "Licencia ministerial" en la columna TIPO.'; return; }
+    const cnt = k => lista.filter(x => x.grupo === k).length;
+    if (!confirm('Encontré ' + lista.length + ' personas:\n• Credencial misionera: ' + cnt('mis') + '\n• Credencial ministerial: ' + cnt('min') + '\n• Licencia ministerial: ' + cnt('lic') + '\n\nLos que ya estén en la galería solo se actualizan (zona y distrito); no se duplican ni pierden su foto.\n\n¿Cargar?')) { st.textContent = 'Cancelado, no se cambió nada.'; return; }
+    st.textContent = 'Cargando...';
+    let nuevos = 0, act = 0, ts = Date.now(), batch = writeBatch(db), n = 0;
+    for (const x of lista) {
+      const ex = galeria.find(g => g.grupo === x.grupo && matClave(g.nombre, '') === matClave(x.nombre, ''));
+      const data = { zona: x.zona, distrito: x.distrito, funcion: x.funcion }; if (x.dniReal) data.dniReal = x.dniReal;
+      if (ex) { batch.set(doc(galeriaCol, ex.id), data, { merge: true }); act++; }
+      else { batch.set(doc(galeriaCol), Object.assign({ grupo: x.grupo, nombre: x.nombre, foto: '', fondoIA: false, ts: ts++ }, data)); nuevos++; }
+      if (++n % 400 === 0) { await batch.commit(); batch = writeBatch(db); }
+    }
+    await batch.commit();
+    st.textContent = '✓ Listo: ' + nuevos + ' nuevos y ' + act + ' actualizados. Las fotos de quienes ya están registrados con foto se muestran solas.';
+  } catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+}
+window.galImportarCred = galImportarCred;
 
 // --- Vista "Fase etaria": adultos / jóvenes, varones / mujeres, por zona o todas ---
 let feFase = [], feSexo = [], feZona = [], feTipo = [];
@@ -4115,14 +4184,25 @@ function renderGaleria() {
   msSetOpts('gal-f-tipo', 'Todos los tipos', TIPOS.map(t => [t.k, t.label, baseT.filter(a => a.tipo === t.k).length])
     .concat(baseT.some(a => !a.tipo) ? [['sin', 'Sin clasificar', baseT.filter(a => !a.tipo).length]] : []), renderGaleria);
   const ft = document.getElementById('gal-f-tipo'); if (ft) ft.style.display = tab.manual ? 'none' : '';
+  const fz = document.getElementById('gal-f-zona'), rs = document.getElementById('gal-resumen');
+  if (fz) fz.style.display = tab.manual ? '' : 'none';
+  if (tab.manual) {
+    const todos = galeria.filter(g => g.grupo === tab.k), cz = {}; todos.forEach(g => { const z = galZonaDe(g); cz[z] = (cz[z] || 0) + 1; });
+    msSetOpts('gal-f-zona', 'Todas las zonas', ['1', '2', '3', '4', '5', '6', '7'].map(z => [z, 'Zona ' + z, cz[z] || 0]).concat(cz.sin ? [['sin', 'Sin zona', cz.sin]] : []), renderGaleria);
+    if (rs) { rs.style.display = ''; rs.innerHTML = '<div class="gal-etq">Cuántos hay</div><div class="gal-pills">' +
+      ['1', '2', '3', '4', '5', '6', '7'].concat(cz.sin ? ['sin'] : []).map(z => '<span class="gal-pill" style="cursor:default;">' + (z === 'sin' ? 'Sin zona' : 'Zona ' + z) + '<span class="cnt">' + (cz[z] || 0) + '</span></span>').join('') +
+      '<span class="gal-pill act" style="background:' + (tab.color || '#5aa9e6') + ';border-color:' + (tab.color || '#5aa9e6') + ';cursor:default;">Total ' + escapeHtml(tab.corto || tab.t) + '<span class="cnt">' + todos.length + '</span></span></div>'; }
+  } else if (rs) rs.style.display = 'none';
   document.getElementById('gal-titulo').textContent = tab.t;
   document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
 
   let items;
   if (tab.manual) {
-    const gs = galeria.filter(g => g.grupo === tab.k && coincideBusq(g.nombre)).sort((a, b) => (a.ts || 0) - (b.ts || 0));
-    items = gs.map(g => '<div class="gal-card" style="cursor:pointer;" onclick="openGal(\'' + g.id + '\')"><div class="avatar gal-foto">' +
-      (g.foto ? '<img src="' + g.foto + '" alt="">' : escapeHtml(inicNombre(g.nombre))) + '</div><div class="gal-nombre">' + escapeHtml(g.nombre) + '</div></div>');
+    const gs = galManual(tab).filter(g => coincideBusq(g.nombre));
+    const ixc = galIndiceAsist();
+    items = gs.map(g => { const f = fotoCred(g, ixc); return '<div class="gal-card" style="cursor:pointer;" onclick="openGal(\'' + g.id + '\')"><div class="avatar gal-foto">' +
+      (f ? '<img src="' + f + '" alt="">' : escapeHtml(inicNombre(g.nombre))) + '</div><div class="gal-nombre">' + escapeHtml(g.nombre) + '</div>' +
+      '<div class="muted" style="font-size:11px;text-align:center;">' + (galZonaDe(g) === 'sin' ? 'Sin zona' : 'Zona ' + escapeHtml(galZonaDe(g))) + (g.distrito ? ' · ' + escapeHtml(g.distrito) : '') + '</div></div>'; });
   } else {
     const ps = galPersonas(tab).filter(a => coincideBusq(fullName(a))).sort((a, b) => fullName(a).localeCompare(fullName(b)));
     items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>');
@@ -4228,7 +4308,7 @@ async function galAgregar() {
   const n = inp.value.replace(/\s+/g, ' ').trim();
   if (!n) { st.textContent = 'Escribe el nombre.'; return; }
   try {
-    await setDoc(doc(galeriaCol), { grupo: galTab, nombre: n, foto: galFotoPend || '', fondoIA: galIAPend, ts: Date.now() });
+    await setDoc(doc(galeriaCol), { grupo: galTab, nombre: n, zona: (document.getElementById('gal-zona-nuevo').value || ''), foto: galFotoPend || '', fondoIA: galIAPend, ts: Date.now() });
     inp.value = ''; galFotoPend = ''; st.textContent = '✓ Agregado';
   } catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
 }
@@ -4262,6 +4342,7 @@ function openGal(id) {
   galEditId = id;
   document.getElementById('gal-grande').innerHTML = g.foto ? '<img src="' + g.foto + '" alt="">' : escapeHtml(inicNombre(g.nombre));
   document.getElementById('gal-nombre-edit').value = g.nombre;
+  document.getElementById('gal-zona-edit').value = g.zona == null ? '' : String(g.zona);
   document.getElementById('gal-edit-msg').textContent = '';
   document.getElementById('gal-overlay').classList.add('open');
 }
@@ -4270,7 +4351,7 @@ async function galGuardarNombre() {
   if (!galEditId) return;
   const n = document.getElementById('gal-nombre-edit').value.replace(/\s+/g, ' ').trim();
   if (!n) return;
-  try { await setDoc(doc(galeriaCol, galEditId), { nombre: n }, { merge: true }); closeGal(); }
+  try { await setDoc(doc(galeriaCol, galEditId), { nombre: n, zona: document.getElementById('gal-zona-edit').value }, { merge: true }); closeGal(); }
   catch (e) { document.getElementById('gal-edit-msg').textContent = '⚠️ ' + (e && e.message ? e.message : e); }
 }
 async function galCambiarFoto(ev) {
@@ -5593,11 +5674,13 @@ if (SOLO_REGISTRO) {
   window.switchTab = function (t) { if (t !== 'registro' && t !== 'materiales') return; return _sw(t); };
 }
 if (ES_COM) {
-  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','saveEditPerson','openGal','matAbrir','matGuardar','matBorrar','matImportar','matVaciar','matTraerDelegados','matPlantilla','matToggleReg','toggleCheckIn','toggleDelegado','galAgregar','galLote','galElegirFoto','galGuardarNombre','galCambiarFoto','galEliminar','subirFotosLote','guardarFotoIndividual'].forEach(n => {
+  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','saveEditPerson','openGal','matAbrir','matGuardar','matBorrar','matImportar','matVaciar','matTraerDelegados','matPlantilla','matToggleReg','toggleCheckIn','toggleDelegado','galAgregar','galImportarCred','galLote','galElegirFoto','galGuardarNombre','galCambiarFoto','galEliminar','subirFotosLote','guardarFotoIndividual'].forEach(n => {
     if (typeof window[n] === 'function') window[n] = function () { avisoLlegada('rojo', 'Sin permiso', null, 'Tu usuario solo puede ver y proyectar.', null, 3500); };
   });
   const _sw2 = window.switchTab;
   window.switchTab = function (t) { if (!['galeria', 'fase', 'proyeccion', 'proy-delegados'].includes(t)) return; return _sw2(t); };
+  // Los botones "Volver" de las pantallas de proyección regresan a la galería (sin abrir la lista de elegir ni el registro)
+  document.querySelectorAll('.proy-back').forEach(b => { b.removeAttribute('onclick'); b.textContent = '← Volver'; b.onclick = () => _sw2('galeria'); });
   _sw2('galeria');
 }
 </script>
