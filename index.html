@@ -185,8 +185,10 @@
   .sesion-box { margin:0 0 12px; padding:9px 12px; border-radius:10px; background:rgba(120,180,230,.1); font-size:12px; color:#cfe3f7; display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .sesion-box b { display:block; font-size:13px; color:#fff; overflow-wrap:anywhere; }
   .sesion-box button { padding:5px 10px; font-size:12px; flex:none; }
-  .solo-registro .solo-admin, .solo-registro .nav-group:not(.nav-reg), .solo-registro .quorum-edit, .solo-registro #dup-banner, .solo-registro .filtros-fila:first-child, .solo-registro .sexo-tag { display:none !important; }
+  .solo-registro .solo-admin, .solo-registro .nav-group:not(.nav-reg):not(.nav-mat), .solo-registro .quorum-edit, .solo-registro #dup-banner, .solo-registro #view-registro .filtros-fila:first-child, .solo-registro .sexo-tag { display:none !important; }
   .solo-registro .sexo-tag { pointer-events:none; }
+  .solo-com .nav-group:not(.nav-com), .solo-com #header-stats, .solo-com #gal-toolbar, .solo-com .solo-admin { display:none !important; }
+  .solo-com .avatar, .solo-com .gal-card { pointer-events:none; cursor:default !important; }
   .solo-registro .avatar, .solo-registro .invitado-name { cursor:default !important; pointer-events:none; }
   #scan-feedback { display: none; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
   .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
@@ -548,6 +550,10 @@
   .tabla-reg .tipo-badge { font-size: 11px; padding: 2px 8px; }
   .tabla-reg .sexo-tag { font-size: 12px; white-space: nowrap; }
   .tabla-reg td:nth-child(3), .tabla-reg td:nth-child(8), .tabla-reg td:nth-child(9), .tabla-reg td:nth-child(10) { white-space: nowrap; }
+  .mat-reg { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .mat-reg .row-action-btn { padding:4px 9px; font-size:11px; }
+  .badge.mat-ok { background:rgba(61,191,147,.16); color:#5fe0b5; }
+  .badge.mat-no { background:rgba(226,166,74,.16); color:#e9bd77; }
 
   /* ===== CELULAR Y TABLET ===== */
   @media (max-width: 900px) {
@@ -582,6 +588,7 @@
     .tabla-reg td:nth-child(8)::before { content: 'Sexo'; }
     .tabla-reg td:nth-child(9)::before { content: 'Estado'; }
     .tabla-reg td:nth-child(10)::before { content: 'Hora de ingreso'; }
+    #view-registro .tabla-reg td:nth-child(11)::before { content: 'Material'; }
     .tabla-reg td.acc-cell { grid-column: 1 / -1; margin-top: 4px; width: 100% !important; }
     .tabla-reg .acc-fila { display: flex; gap: 8px; flex-wrap: wrap; }
     .tabla-reg .acc-fila .row-action-btn { flex: 1 1 0; min-height: 44px; font-size: 14px; }
@@ -660,7 +667,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     <button class="sidebar-close" onclick="closeMobileMenu()">✕</button>
     <div class="sidebar-logo">CONGRESO <span>2026</span></div>
     <div class="sidebar-sub">Misión Centro-Oeste del Perú</div>
-    <div class="sidebar-version">Versión 25 nov · usuarios</div>
+    <div class="sidebar-version">Versión 25 nov · comunicaciones</div>
     <div class="sesion-box"><div>Sesión<b id="sesion-nombre">—</b></div><button onclick="loginSalir()">Salir</button></div>
 
     <div class="nav-group nav-reg">
@@ -670,10 +677,10 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="nav-item" onclick="switchTab('registro'); setFilter('out'); closeMobileMenu()">Por llegar</div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group nav-mat">
       <div class="nav-pill verde">ENTREGA DE MATERIALES</div>
       <div class="nav-item" onclick="switchTab('materiales'); closeMobileMenu()">📦 Entregar materiales</div>
-      <div class="nav-item" onclick="exportMateriales('completo'); closeMobileMenu()">⬇ Informe de materiales</div>
+      <div class="nav-item solo-admin" onclick="exportMateriales('completo'); closeMobileMenu()">⬇ Informe de materiales</div>
     </div>
 
     <div class="nav-group">
@@ -684,13 +691,13 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="nav-item" onclick="printCredentials(); closeMobileMenu()">🎫 Credenciales QR</div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group nav-com">
       <div class="nav-pill verde">EN VIVO</div>
       <div class="muted" id="last-sync" style="color: rgba(255,255,255,0.7); padding: 0 14px;"><span class="live-dot"></span>Conectando...</div>
       <div class="nav-item" onclick="switchTab('proyeccion'); closeMobileMenu()">📊 Asistencia (proyectar)</div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group nav-com">
       <div class="nav-pill amarillo">GALERÍA</div>
       <div class="nav-item" onclick="switchTab('galeria'); closeMobileMenu()">🖼 Delegados con foto</div>
       <div class="nav-item" onclick="switchTab('fase'); closeMobileMenu()">👥 Fase etaria</div>
@@ -702,7 +709,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="nav-item" onclick="abrirComision('nom'); closeMobileMenu()">🔸 Comisión de Nombramientos</div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group nav-com">
       <div class="nav-pill verde">PROYECTAR DELEGADOS</div>
       <div class="nav-item" onclick="proyectarComision('org'); closeMobileMenu()">📊 Organizadora</div>
       <div class="nav-item" onclick="proyectarComision('nom'); closeMobileMenu()">📊 Nombramientos</div>
@@ -806,7 +813,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="table-wrap">
         <table class="tabla-reg">
           <thead>
-            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Tipo</th><th>Zona</th><th>Distrito</th><th>Fase etaria</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Acción</th></tr>
+            <tr><th>N°</th><th>Invitado</th><th>DNI</th><th>Tipo</th><th>Zona</th><th>Distrito</th><th>Fase etaria</th><th>Sexo</th><th>Estado</th><th>Hora de ingreso</th><th>Material</th><th>Acción</th></tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
@@ -835,7 +842,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       <div class="card-eyebrow">LISTA DE MATERIALES</div>
       <div class="search-row">
         <input type="text" id="mat-buscar" placeholder="Buscar por nombre o DNI..." oninput="renderMateriales()" autocomplete="off" />
-        <button class="primary" onclick="matAbrir()">+ Agregar persona</button>
+        <button class="primary solo-admin" onclick="matAbrir()">+ Agregar persona</button>
       </div>
       <div class="filter-chips" id="mat-chips">
         <div class="chip active" data-f="all" onclick="matSetFiltro('all')">Todos</div>
@@ -849,14 +856,14 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
           <div class="ms" id="mat-f-tipo"></div>
           <button onclick="matLimpiar()">Quitar filtros</button>
         </div>
-        <div class="filtros-fila">
+        <div class="filtros-fila solo-admin">
           <span class="filtros-lbl">EXCEL</span>
           <button onclick="exportMateriales('entregados')">⬇ Los que recibieron</button>
           <button onclick="exportMateriales('pendientes')">⬇ Los que NO recibieron</button>
           <button onclick="exportMateriales('filtrado')">⬇ Lo que veo ahora</button>
           <button class="primary" onclick="exportMateriales('completo')">⬇ Informe completo</button>
         </div>
-        <div class="filtros-fila">
+        <div class="filtros-fila solo-admin">
           <span class="filtros-lbl">LISTA</span>
           <label class="btn-file"><input type="file" id="mat-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="matImportar(event)"><span class="btn-like">⬆ Subir lista (Excel)</span></label>
           <button onclick="matPlantilla()">⬇ Descargar formato</button>
@@ -3181,6 +3188,8 @@ const db = getFirestore(fbApp);
 // Administradoras (control total). Cualquier otro usuario creado en Firebase solo puede marcar asistencia.
 // IMPORTANTE: la misma lista debe estar en las reglas de Firestore (archivo firestore.rules).
 const ADMIN_USUARIOS = ['pierina.avila'];
+// Comunicaciones: solo VE proyecciones, galería y fase etaria (no puede cambiar nada).
+const COM_USUARIOS = ['comunicaciones.micop'];
 const DOMINIO_USUARIO = '@micop.app';
 const auth = getAuth(fbApp);
 const claveCorreo = u => { u = String(u || '').trim().toLowerCase().replace(/\s+/g, ''); return u.includes('@') ? u : u + DOMINIO_USUARIO; };
@@ -3206,9 +3215,11 @@ const usuarioActual = await new Promise(resolve => {
   });
 });
 const ES_ADMIN = ADMIN_USUARIOS.map(claveCorreo).includes(String(usuarioActual.email || '').toLowerCase());
-const SOLO_REGISTRO = !ES_ADMIN;
+const ES_COM = !ES_ADMIN && COM_USUARIOS.map(claveCorreo).includes(String(usuarioActual.email || '').toLowerCase());
+const SOLO_REGISTRO = !ES_ADMIN && !ES_COM;
 if (SOLO_REGISTRO) document.body.classList.add('solo-registro');
-document.getElementById('sesion-nombre').textContent = usuarioDeCorreo(usuarioActual.email) + (ES_ADMIN ? ' (administradora)' : ' (solo registro)');
+if (ES_COM) document.body.classList.add('solo-com');
+document.getElementById('sesion-nombre').textContent = usuarioDeCorreo(usuarioActual.email) + (ES_ADMIN ? ' (administradora)' : ES_COM ? ' (comunicaciones)' : ' (registro y materiales)');
 const asistentesCol = collection(db, "asistentes");
 const quorumDocRef = doc(db, "config", "quorum");
 
@@ -3676,6 +3687,7 @@ const materialesCol = collection(db, "materiales");
 let materiales = [], matFiltro = 'all', matUltimas = [];
 onSnapshot(materialesCol, (snap) => {
   materiales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try { if (document.getElementById('view-registro').style.display !== 'none') renderTable(); } catch (e) {}
   if (document.getElementById('view-materiales').style.display !== 'none') renderMateriales();
 }, () => {});
 
@@ -3733,8 +3745,8 @@ function renderMateriales() {
       <td class="acc-cell"><div class="acc-fila">${m.entregado
         ? `<button class="row-action-btn desmarcar" onclick="matToggle('${escapeHtml(m.id)}')">Deshacer</button>`
         : `<button class="row-action-btn marcar" onclick="matToggle('${escapeHtml(m.id)}')">Entregar</button>`}
-        <button class="row-action-btn" title="Editar" onclick="matAbrir('${escapeHtml(m.id)}')">✏</button>
-        <button class="row-action-btn desmarcar" title="Quitar de la lista de materiales" onclick="matBorrar('${escapeHtml(m.id)}')">🗑</button></div></td>
+        <button class="row-action-btn solo-admin" title="Editar" onclick="matAbrir('${escapeHtml(m.id)}')">✏</button>
+        <button class="row-action-btn desmarcar solo-admin" title="Quitar de la lista de materiales" onclick="matBorrar('${escapeHtml(m.id)}')">🗑</button></div></td>
     </tr>`).join('');
 }
 async function matToggle(id) {
@@ -4665,8 +4677,33 @@ function setFilter(filter) {
   renderTable();
 }
 
+// Material entregado, visto desde el Registro. Solo LEE la lista de materiales (no la mezcla con la asistencia).
+function matIndice() {
+  const porId = new Map(), porClave = new Map();
+  materiales.forEach(m => { porId.set(m.id, m); if (m.dniReal) porId.set(m.dniReal, m); const k = matClave(m.nombre, m.apellidos); if (k && !porClave.has(k)) porClave.set(k, m); });
+  return { porId, porClave };
+}
+function matDeAsist(a, ix) {
+  return ix.porId.get(a.dni) || (a.dniReal && ix.porId.get(a.dniReal)) || ix.porClave.get(matClave(a.nombre, a.apellidos)) || null;
+}
+function celdaMaterial(a, ix) {
+  const m = matDeAsist(a, ix);
+  if (!m) return '<span class="muted" title="No está en la lista de materiales">—</span>';
+  const id = escapeHtml(m.id);
+  return m.entregado
+    ? '<span class="mat-reg"><span class="badge mat-ok" title="Recibió el ' + escapeHtml((m.fecha || '') + ' ' + (m.hora || '')) + '"><span class="badge-dot"></span>Recibió</span><button class="row-action-btn desmarcar" title="Deshacer la entrega" onclick="matToggleReg(\'' + id + '\')">↩</button></span>'
+    : '<span class="mat-reg"><span class="badge mat-no"><span class="badge-dot"></span>No recibió</span><button class="row-action-btn marcar" onclick="matToggleReg(\'' + id + '\')">📦 Entregar</button></span>';
+}
+async function matToggleReg(id) {
+  const m = materiales.find(x => x.id === id); if (!m) return;
+  const antes = !!m.entregado;
+  await matToggle(id);
+  avisoLlegada(antes ? 'amb' : 'ok', antes ? 'Se deshizo la entrega a' : 'Material entregado a', m, '', 'M:' + id);
+}
+window.matToggleReg = matToggleReg;
 function renderTable() {
   renderFiltros();
+  const idxMat = matIndice();
   actualizarBannerDup();
   const q = buscable(document.getElementById('search').value);
   let rows = attendees.slice().sort((a, b) => (a.numero || 0) - (b.numero || 0));
@@ -4728,6 +4765,7 @@ function renderTable() {
         ? '<span class="badge presente"><span class="badge-dot"></span>Presente</span>'
         : '<span class="badge pendiente"><span class="badge-dot"></span>Pendiente</span>'}</td>
       <td>${a.hora || '—'}</td>
+      <td>${celdaMaterial(a, idxMat)}</td>
       <td class="acc-cell"><div class="acc-fila">${a.llego
         ? `<button class="row-action-btn desmarcar" onclick="toggleCheckIn('${a.dni}')">Desmarcar</button>`
         : `<button class="row-action-btn marcar" onclick="toggleCheckIn('${a.dni}')">Marcar</button>`}
@@ -4763,7 +4801,7 @@ function avisoLlegada(tipo, titulo, a, extra, dni, ms) {
   clearTimeout(avisoLlegada._t);
   avisoLlegada._t = setTimeout(() => el.classList.remove('ver'), ms || 4500);
 }
-function avisoDeshacer(dni) { document.getElementById('aviso-llegada').classList.remove('ver'); toggleCheckIn(dni); }
+function avisoDeshacer(dni) { document.getElementById('aviso-llegada').classList.remove('ver'); if (String(dni).startsWith('M:')) matToggleReg(dni.slice(2)); else toggleCheckIn(dni); }
 window.avisoDeshacer = avisoDeshacer;
 async function toggleCheckIn(dni) {
   const person = attendees.find(a => a.dni === dni);
@@ -5548,11 +5586,19 @@ window.encCambio = encCambio; window.encCompleta = encCompleta; window.encLlenar
 window.subirFotosLote = subirFotosLote;
 // Usuarios de "solo registro": además de ocultar los botones, se bloquean las acciones que cambian datos.
 if (SOLO_REGISTRO) {
-  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','proyectarComision','saveEditPerson','openGal'].forEach(n => {
+  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','proyectarComision','saveEditPerson','openGal','matAbrir','matGuardar','matBorrar','matImportar','matVaciar','matTraerDelegados','matPlantilla'].forEach(n => {
     if (typeof window[n] === 'function') window[n] = function () { avisoLlegada('rojo', 'Sin permiso', null, 'Tu usuario solo puede marcar asistencia.', null, 3500); };
   });
   const _sw = window.switchTab;
-  window.switchTab = function (t) { if (t !== 'registro') return; return _sw(t); };
+  window.switchTab = function (t) { if (t !== 'registro' && t !== 'materiales') return; return _sw(t); };
+}
+if (ES_COM) {
+  ['openEditModal','deletePerson','openAddModal','openFoto','cycleSexo','saveQuorum','unirDuplicados','printCredentials','exportExcel','exportAsistencia','exportMateriales','abrirComision','saveEditPerson','openGal','matAbrir','matGuardar','matBorrar','matImportar','matVaciar','matTraerDelegados','matPlantilla','matToggleReg','toggleCheckIn','toggleDelegado','galAgregar','galLote','galElegirFoto','galGuardarNombre','galCambiarFoto','galEliminar','subirFotosLote','guardarFotoIndividual'].forEach(n => {
+    if (typeof window[n] === 'function') window[n] = function () { avisoLlegada('rojo', 'Sin permiso', null, 'Tu usuario solo puede ver y proyectar.', null, 3500); };
+  });
+  const _sw2 = window.switchTab;
+  window.switchTab = function (t) { if (!['galeria', 'fase', 'proyeccion', 'proy-delegados'].includes(t)) return; return _sw2(t); };
+  _sw2('galeria');
 }
 </script>
 <div id="aviso-llegada" role="status" aria-live="polite"></div>
