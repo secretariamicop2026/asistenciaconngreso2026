@@ -699,6 +699,8 @@
   .tema-claro tbody tr:hover { background:#f1f7fc; }
   .tema-claro .filtros-box { background:#f4f8fc; border-color:rgba(0,61,106,.1); }
   .tema-claro .ms-btn, .tema-claro .btn-like { background:#fff; color:#0b2a52; border-color:rgba(0,61,106,.2); }
+  #gal-f-cred.cred-act .ms-btn { border-color:#12b5d6; background:rgba(18,181,214,.14); font-weight:700; }
+  #gal-f-cred { flex:0 0 280px; }
   .tema-claro .ms-btn.act { background:rgba(18,181,214,.14); border-color:#12b5d6; }
   .tema-claro .ms-panel { background:#fff; border:1px solid rgba(0,61,106,.16); box-shadow:0 12px 30px rgba(0,39,89,.18); }
   .tema-claro .ms-op { color:#0b2a52; } .tema-claro .ms-op:hover { background:rgba(18,181,214,.12); }
@@ -803,6 +805,9 @@
   .tema-claro #proy-screen .quorum-num { font-family:'Anton',sans-serif; font-weight:400; font-size:clamp(70px,9.5vw,190px); color:#003d6a; margin:2px 0; }
   .tema-claro #proy-screen .quorum-meta { font-size:clamp(16px,1.4vw,28px); color:#0a7199; font-weight:700; opacity:1; }
   .tema-claro #proy-screen .quorum-progress-bar { background:#dbe6f2; height:16px; max-width:1000px; }
+  .tema-claro #proy-screen .quorum-block.rojo .quorum-progress-fill { background:#d9667f !important; }
+  .tema-claro #proy-screen .quorum-block.verde .quorum-progress-fill { background:#2bb673 !important; }
+  .quorum-block.rojo .quorum-progress-fill { background:#d9667f !important; } .quorum-block.verde .quorum-progress-fill { background:#2bb673 !important; }
   .tema-claro #proy-screen .quorum-progress-fill { background:linear-gradient(90deg,#0a7199,#12b5d6 60%,#e9a23b); }
   .tema-claro #proy-screen .proy-grid { gap:clamp(12px,1.4vw,26px); }
   .tema-claro #proy-screen .proy-stat { padding:clamp(16px,2.6vh,30px) 18px clamp(16px,2.6vh,30px) 32px; gap:18px; }
@@ -1267,7 +1272,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
     </div>
     <div class="card gal-nav">
       <div class="gal-fila"><div class="gal-etq">Zonas</div><div class="gal-pills" id="gal-tabs-zonas"></div></div>
-      <div class="gal-fila"><div class="gal-etq">Tipo de credencial</div><div class="gal-pills" id="gal-tabs-otros"></div>
+      <div class="gal-fila"><div class="gal-etq">Tipo de credencial</div><div id="gal-f-cred" class="ms-wrap" style="min-width:260px;"></div>
         <button class="celeste solo-admin" style="padding:7px 12px;font-size:13px;" title="Un solo archivo: reparte solo a cada persona en su tipo y su zona" onclick="document.getElementById('gal-cred-input').click()">⬆ Cargar lista de credenciales (Excel)</button>
         <input type="file" id="gal-cred-input" accept=".xlsx,.xls" style="display:none;" onchange="galImportarCred(event)"></div>
       <div class="gal-fila gal-acciones">
@@ -3983,8 +3988,16 @@ const GAL_TABS = [
   { k: 'gen', t: 'Delegados generales (Zona 0)', corto: 'Zona 0 · Delegados generales', zona: '0', color: '#e0ae62' },
   { k: 'mis', t: 'Credencial misionera', corto: 'Credencial misionera', manual: true, color: '#5dc7a1' },
   { k: 'min', t: 'Credencial ministerial', corto: 'Credencial ministerial', manual: true, color: '#b39cf5' },
-  { k: 'lic', t: 'Licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' }
+  { k: 'lic', t: 'Licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' },
+  { k: 'cred', t: 'Credenciales', corto: 'Credenciales', manual: true, multi: true, oculto: true, color: '#12b5d6' }
 ];
+const CRED_TIPOS = ['mis', 'min', 'lic'];
+function galCredSel() { const s = msGet('gal-f-cred'); return s.length ? s : CRED_TIPOS; }
+function galGrupoAlta() {
+  if (galTab !== 'cred') return galTab;
+  const s = msGet('gal-f-cred');
+  return s.length === 1 ? s[0] : null;
+}
 onSnapshot(galeriaCol, (snap) => {
   galeria = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   renderGaleria();
@@ -4278,9 +4291,23 @@ function pdfCirculo(foto, iniciales) {
 // «Delegados generales» = los marcados como tipo general en el Excel + los de zona 0
 // Credenciales (misionera / ministerial / licencia): se filtran por zona y toman la foto de la persona registrada si existe
 function galZonaDe(g) { return g.zona !== undefined && g.zona !== null && String(g.zona).trim() !== '' ? String(g.zona).trim() : 'sin'; }
+function galIndiceTodos() {
+  const porDni = new Map(), porClave = new Map();
+  attendees.forEach(a => { porDni.set(a.dni, a); if (a.dniReal) porDni.set(a.dniReal, a); const k = matClave(a.nombre, a.apellidos); if (k && !porClave.has(k)) porClave.set(k, a); });
+  return { porDni, porClave };
+}
+function galTipoDe(g, ix) {
+  const a = (g.dniReal && ix.porDni.get(g.dniReal)) || ix.porClave.get(matClave(g.nombre, '')) || null;
+  return a && a.tipo ? a.tipo : 'sin';
+}
+function galManualBase(tab) {
+  const gr = tab.multi ? galCredSel() : [tab.k];
+  return galeria.filter(g => gr.includes(g.grupo));
+}
 function galManual(tab) {
-  const z = msGet('gal-f-zona');
-  return galeria.filter(g => g.grupo === tab.k && (!z.length || z.includes(galZonaDe(g)))).sort((a, b) => (Number(a.zona) || 99) - (Number(b.zona) || 99) || (a.ts || 0) - (b.ts || 0));
+  const z = msGet('gal-f-zona'), t = msGet('gal-f-tipo'), ix = t.length ? galIndiceTodos() : null;
+  const gr = tab.multi ? galCredSel() : [tab.k];
+  return galeria.filter(g => gr.includes(g.grupo) && (!z.length || z.includes(galZonaDe(g))) && (!t.length || t.includes(galTipoDe(g, ix)))).sort((a, b) => (Number(a.zona) || 99) - (Number(b.zona) || 99) || (a.ts || 0) - (b.ts || 0));
 }
 function galIndiceAsist() {
   const porDni = new Map(), porClave = new Map();
@@ -4313,7 +4340,7 @@ function galItemsDe(tab) {
 async function galDescargarPDF(todas) {
   const st = document.getElementById('gal-pdf-estado');
   if (!window.jspdf) { st.textContent = '⚠️ No se pudo cargar el generador de PDF. Revisa tu conexión e intenta de nuevo.'; return; }
-  const tabs = todas ? GAL_TABS.filter(t => galItemsDe(t).length > 0) : [GAL_TABS.find(t => t.k === galTab)];
+  const tabs = todas ? GAL_TABS.filter(t => !t.oculto && galItemsDe(t).length > 0) : [GAL_TABS.find(t => t.k === galTab)];
   if (!tabs.length || !galItemsDe(tabs[0]).length) { st.textContent = 'No hay personas para descargar.'; return; }
   const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const PW = 297, PH = 210, M = 12, HEAD = 24;
@@ -4485,21 +4512,29 @@ function renderGaleria() {
       escapeHtml(x.corto || x.t) + '<span class="cnt">' + n + '</span></button>';
   };
   document.getElementById('gal-tabs-zonas').innerHTML = GAL_TABS.filter(x => x.k === 'gen').concat(GAL_TABS.filter(x => /^z\d$/.test(x.k))).map(pill).join('');
-  document.getElementById('gal-tabs-otros').innerHTML = GAL_TABS.filter(x => !/^z\d$/.test(x.k) && x.k !== 'gen').map(pill).join('');
-  const baseT = tab.manual ? [] : galBase(tab);
-  msSetOpts('gal-f-tipo', 'Todos los tipos', TIPOS.map(t => [t.k, t.label, baseT.filter(a => a.tipo === t.k).length])
-    .concat(baseT.some(a => !a.tipo) ? [['sin', 'Sin clasificar', baseT.filter(a => !a.tipo).length]] : []), renderGaleria);
-  const ft = document.getElementById('gal-f-tipo'); if (ft) ft.style.display = tab.manual ? 'none' : '';
+  msSetOpts('gal-f-cred', 'Todas las credenciales', CRED_TIPOS.map(k => { const x = GAL_TABS.find(t => t.k === k); return [k, x.corto, galeria.filter(g => g.grupo === k).length]; }), () => { galTab = 'cred'; renderGaleria(); });
+  const fc = document.getElementById('gal-f-cred'); if (fc) fc.classList.toggle('cred-act', galTab === 'cred');
+  let optsT;
+  if (tab.manual) {
+    const ixT = galIndiceTodos(), ct = {}; galManualBase(tab).forEach(g => { const k = galTipoDe(g, ixT); ct[k] = (ct[k] || 0) + 1; });
+    optsT = TIPOS.map(t => [t.k, t.label, ct[t.k] || 0]).concat(ct.sin ? [['sin', 'Sin clasificar', ct.sin]] : []);
+  } else {
+    const baseT = galBase(tab);
+    optsT = TIPOS.map(t => [t.k, t.label, baseT.filter(a => a.tipo === t.k).length])
+      .concat(baseT.some(a => !a.tipo) ? [['sin', 'Sin clasificar', baseT.filter(a => !a.tipo).length]] : []);
+  }
+  msSetOpts('gal-f-tipo', 'Todos los tipos', optsT, renderGaleria);
+  const ft = document.getElementById('gal-f-tipo'); if (ft) ft.style.display = '';
   const fz = document.getElementById('gal-f-zona'), rs = document.getElementById('gal-resumen');
   if (fz) fz.style.display = tab.manual ? '' : 'none';
   if (tab.manual) {
-    const todos = galeria.filter(g => g.grupo === tab.k), cz = {}; todos.forEach(g => { const z = galZonaDe(g); cz[z] = (cz[z] || 0) + 1; });
+    const todos = galManualBase(tab), cz = {}; todos.forEach(g => { const z = galZonaDe(g); cz[z] = (cz[z] || 0) + 1; });
     msSetOpts('gal-f-zona', 'Todas las zonas', ['1', '2', '3', '4', '5', '6', '7'].map(z => [z, 'Zona ' + z, cz[z] || 0]).concat(cz.sin ? [['sin', 'Sin zona', cz.sin]] : []), renderGaleria);
     if (rs) { rs.style.display = ''; rs.innerHTML = '<div class="gal-etq">Cuántos hay</div><div class="gal-pills">' +
       ['1', '2', '3', '4', '5', '6', '7'].concat(cz.sin ? ['sin'] : []).map(z => '<span class="gal-pill" style="cursor:default;">' + (z === 'sin' ? 'Sin zona' : 'Zona ' + z) + '<span class="cnt">' + (cz[z] || 0) + '</span></span>').join('') +
       '<span class="gal-pill act" style="background:' + (tab.color || '#5aa9e6') + ';border-color:' + (tab.color || '#5aa9e6') + ';cursor:default;">Total ' + escapeHtml(tab.corto || tab.t) + '<span class="cnt">' + todos.length + '</span></span></div>'; }
   } else if (rs) rs.style.display = 'none';
-  document.getElementById('gal-titulo').textContent = tab.t;
+  document.getElementById('gal-titulo').textContent = tab.multi ? (msGet('gal-f-cred').length ? msGet('gal-f-cred').map(k => GAL_TABS.find(t => t.k === k).corto).join(' + ') : 'Todas las credenciales') : tab.t;
   document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
 
   let items;
@@ -4508,7 +4543,7 @@ function renderGaleria() {
     const ixc = galIndiceAsist();
     items = gs.map(g => { const f = fotoCred(g, ixc); return '<div class="gal-card" style="cursor:pointer;" onclick="openGal(\'' + g.id + '\')"><div class="avatar gal-foto">' +
       (f ? '<img src="' + f + '" alt="">' : escapeHtml(inicNombre(g.nombre))) + '</div><div class="gal-nombre">' + escapeHtml(g.nombre) + '</div>' +
-      '<div class="muted" style="font-size:11px;text-align:center;">' + (galZonaDe(g) === 'sin' ? 'Sin zona' : 'Zona ' + escapeHtml(galZonaDe(g))) + (g.distrito ? ' · ' + escapeHtml(g.distrito) : '') + '</div></div>'; });
+      '<div class="muted" style="font-size:11px;text-align:center;">' + (tab.multi ? escapeHtml((GAL_TABS.find(t => t.k === g.grupo) || {}).corto || '') + ' · ' : '') + (galZonaDe(g) === 'sin' ? 'Sin zona' : 'Zona ' + escapeHtml(galZonaDe(g))) + (g.distrito ? ' · ' + escapeHtml(g.distrito) : '') + '</div></div>'; });
   } else {
     const ps = galPersonas(tab).filter(a => coincideBusq(fullName(a))).sort((a, b) => fullName(a).localeCompare(fullName(b)));
     items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>');
@@ -4516,7 +4551,7 @@ function renderGaleria() {
   document.getElementById('gal-total').textContent = items.length;
   const q = galQuery();
   if (q && !items.length) {
-    const otros = GAL_TABS.filter(t => t.k !== tab.k && galItemsDe(t).some(i => coincideBusq(i.nombre)));
+    const otros = GAL_TABS.filter(t => !t.oculto && t.k !== tab.k && galItemsDe(t).some(i => coincideBusq(i.nombre)));
     grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Nadie con «' + escapeHtml(document.getElementById('gal-buscar').value.trim()) + '» en este grupo.' +
       (otros.length ? ' Sí aparece en: ' + otros.map(t => '<a href="#" style="color:var(--celeste);font-weight:700;" onclick="galSel(\'' + t.k + '\');return false;">' + escapeHtml(t.corto || t.t) + '</a>').join(', ') + '.' : '') + '</div>';
     return;
@@ -4613,8 +4648,10 @@ async function galAgregar() {
   const st = document.getElementById('gal-estado');
   const n = inp.value.replace(/\s+/g, ' ').trim();
   if (!n) { st.textContent = 'Escribe el nombre.'; return; }
+  const gA = galGrupoAlta();
+  if (!gA) { st.textContent = 'Elige un solo tipo de credencial arriba para agregar a alguien.'; return; }
   try {
-    await setDoc(doc(galeriaCol), { grupo: galTab, nombre: n, zona: (document.getElementById('gal-zona-nuevo').value || ''), foto: galFotoPend || '', fondoIA: galIAPend, ts: Date.now() });
+    await setDoc(doc(galeriaCol), { grupo: gA, nombre: n, zona: (document.getElementById('gal-zona-nuevo').value || ''), foto: galFotoPend || '', fondoIA: galIAPend, ts: Date.now() });
     inp.value = ''; galFotoPend = ''; st.textContent = '✓ Agregado';
   } catch (e) { st.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
 }
@@ -4624,6 +4661,8 @@ async function galLote(ev) {
   ev.target.value = '';
   const st = document.getElementById('gal-estado');
   if (!files.length) return;
+  const gA = galGrupoAlta();
+  if (!gA) { st.textContent = 'Elige un solo tipo de credencial arriba para agregar las fotos.'; return; }
   let batch = writeBatch(db), n = 0, ok = 0;
   const base = Date.now();
   for (let i = 0; i < files.length; i++) {
@@ -4631,7 +4670,7 @@ async function galLote(ev) {
     const nombre = files[i].name.replace(/\.[^.]+$/, '').replace(/\(\d+\)/g, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
     try {
       const foto = await reducirFoto(files[i], iaLote('gal-ia'));
-      batch.set(doc(galeriaCol), { grupo: galTab, nombre, foto, fondoIA: ultimaIA, ts: base + i });
+      batch.set(doc(galeriaCol), { grupo: gA, nombre, foto, fondoIA: ultimaIA, ts: base + i });
       n++; ok++;
       if (n >= 25) { await batch.commit(); batch = writeBatch(db); n = 0; }
     } catch (e) {}
@@ -4814,7 +4853,7 @@ function renderProyeccion() {
     quorumBlock.className = 'quorum-block verde';
     quorumMetaEl.textContent = '¡Quórum alcanzado! (' + quorumPct + '%)';
   } else if (quorumPct >= 50) {
-    quorumBlock.className = 'quorum-block amarillo';
+    quorumBlock.className = 'quorum-block verde';
     quorumMetaEl.textContent = quorumPct + '% de la meta de ' + quorumMeta;
   } else {
     quorumBlock.className = 'quorum-block rojo';
