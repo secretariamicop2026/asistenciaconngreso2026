@@ -143,6 +143,11 @@
   .gal-acciones { gap: 8px; }
   .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 22px 14px; }
   .gal-card { text-align: center; }
+  #fe-secciones .gal-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 38px 26px; }
+  #fe-secciones .gal-card .avatar { margin-bottom: 12px; }
+  #fe-secciones .gal-nombre { line-height: 1.3; }
+  .gal-dist { margin-top: 6px; font-size: 12px; font-weight: 600; color: #5a7394; line-height: 1.25; letter-spacing: .2px; }
+
   .gal-card .avatar { display: flex; margin: 0 auto 8px; }
   .gal-foto { width: 104px; height: 104px; font-size: 34px; margin: 0 auto 8px; background: var(--celeste-bg); color: var(--celeste); display: flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 50%; overflow: hidden; }
   .gal-card .avatar.gal-foto { width: 104px; height: 104px; font-size: 34px; margin: 0 auto 8px; }
@@ -699,8 +704,8 @@
   .tema-claro tbody tr:hover { background:#f1f7fc; }
   .tema-claro .filtros-box { background:#f4f8fc; border-color:rgba(0,61,106,.1); }
   .tema-claro .ms-btn, .tema-claro .btn-like { background:#fff; color:#0b2a52; border-color:rgba(0,61,106,.2); }
-  #gal-f-cred.cred-act .ms-btn { border-color:#12b5d6; background:rgba(18,181,214,.14); font-weight:700; }
-  #gal-f-cred { flex:0 0 280px; }
+  #gal-f-cred.cred-act .ms-btn, #gal-f-zsel.cred-act .ms-btn { border-color:#12b5d6; background:rgba(18,181,214,.14); font-weight:700; }
+  #gal-f-cred { flex:0 0 280px; } #gal-f-zsel { flex:0 0 320px; }
   .tema-claro .ms-btn.act { background:rgba(18,181,214,.14); border-color:#12b5d6; }
   .tema-claro .ms-panel { background:#fff; border:1px solid rgba(0,61,106,.16); box-shadow:0 12px 30px rgba(0,39,89,.18); }
   .tema-claro .ms-op { color:#0b2a52; } .tema-claro .ms-op:hover { background:rgba(18,181,214,.12); }
@@ -1271,7 +1276,7 @@ document.addEventListener('keydown', function (e) { var s = document.getElementB
       </div>
     </div>
     <div class="card gal-nav">
-      <div class="gal-fila"><div class="gal-etq">Zonas</div><div class="gal-pills" id="gal-tabs-zonas"></div></div>
+      <div class="gal-fila"><div class="gal-etq">Zonas</div><div id="gal-f-zsel" class="ms-wrap" style="min-width:300px;"></div></div>
       <div class="gal-fila"><div class="gal-etq">Tipo de credencial</div><div id="gal-f-cred" class="ms-wrap" style="min-width:260px;"></div>
         <button class="celeste solo-admin" style="padding:7px 12px;font-size:13px;" title="Un solo archivo: reparte solo a cada persona en su tipo y su zona" onclick="document.getElementById('gal-cred-input').click()">⬆ Cargar lista de credenciales (Excel)</button>
         <input type="file" id="gal-cred-input" accept=".xlsx,.xls" style="display:none;" onchange="galImportarCred(event)"></div>
@@ -3980,7 +3985,7 @@ window.saveComMeta = saveComMeta;
 // ===== GALERÍA DE DELEGADOS: Zona 1..7, Delegados generales (zona 0) y 3 grupos que se llenan a mano =====
 const galeriaCol = collection(db, "galeria");
 let galeria = [];
-let galTab = 'z1';
+let galTab = 'zsel', galInit = false;
 const GAL_TABS = [
   { k: 'z1', t: 'Zona 1', zona: '1' }, { k: 'z2', t: 'Zona 2', zona: '2' }, { k: 'z3', t: 'Zona 3', zona: '3' },
   { k: 'z4', t: 'Zona 4', zona: '4' }, { k: 'z5', t: 'Zona 5', zona: '5' }, { k: 'z6', t: 'Zona 6', zona: '6' },
@@ -3989,9 +3994,12 @@ const GAL_TABS = [
   { k: 'mis', t: 'Credencial misionera', corto: 'Credencial misionera', manual: true, color: '#5dc7a1' },
   { k: 'min', t: 'Credencial ministerial', corto: 'Credencial ministerial', manual: true, color: '#b39cf5' },
   { k: 'lic', t: 'Licencia ministerial', corto: 'Licencia ministerial', manual: true, color: '#5cc3ec' },
+  { k: 'zsel', t: 'Delegados', corto: 'Delegados', zmulti: true, oculto: true, color: '#4fb0dd' },
   { k: 'cred', t: 'Credenciales', corto: 'Credenciales', manual: true, multi: true, oculto: true, color: '#12b5d6' }
 ];
 const CRED_TIPOS = ['mis', 'min', 'lic'];
+const ZONA_KEYS = ['gen', 'z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7'];
+function galZSel() { const s = msGet('gal-f-zsel'); return s.length ? s : ZONA_KEYS; }
 function galCredSel() { const s = msGet('gal-f-cred'); return s.length ? s : CRED_TIPOS; }
 function galGrupoAlta() {
   if (galTab !== 'cred') return galTab;
@@ -4320,6 +4328,7 @@ function fotoCred(g, ix) {
   return a ? a.foto : '';
 }
 function galBase(tab) {
+  if (tab.zmulti) { const vistos = new Set(), out = []; galZSel().forEach(k => galBase(GAL_TABS.find(t => t.k === k)).forEach(a => { if (!vistos.has(a.dni)) { vistos.add(a.dni); out.push(a); } })); return out; }
   if (tab.k === 'gen') return attendees.filter(a => a.tipo === 'general' || String(a.zona ?? '') === '0');
   return attendees.filter(a => String(a.zona ?? '') === tab.zona);
 }
@@ -4476,7 +4485,7 @@ function renderFase() {
     { t: 'Jóvenes', col: '#e2a64a', items: lista.filter(a => a.fase === 'Joven') },
     { t: 'Sin fase etaria', col: '#94abc7', items: lista.filter(a => a.fase !== 'Adulto' && a.fase !== 'Joven') }
   ].filter(g => g.items.length);
-  const tarjeta = a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>';
+  const tarjeta = a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div>' + (a.distrito ? '<div class="gal-dist">' + escapeHtml(a.distrito) + '</div>' : '') + '</div>';
   cont.innerHTML = grupos.length ? grupos.map(g =>
     '<div class="card"><div class="fase-titulo" style="color:' + g.col + ';border-color:' + g.col + '55;">' + g.t + '<span class="cnt">' + g.items.length + '</span></div>' +
     '<div class="gal-grid">' + g.items.map(tarjeta).join('') + '</div></div>').join('') :
@@ -4511,7 +4520,9 @@ function renderGaleria() {
     return '<button class="gal-pill' + (act ? ' act' : '') + '" style="' + (act ? 'background:' + col + ';border-color:' + col + ';' : 'color:' + (x.color || '#b9d9f5') + ';') + '" onclick="galSel(\'' + x.k + '\')">' +
       escapeHtml(x.corto || x.t) + '<span class="cnt">' + n + '</span></button>';
   };
-  document.getElementById('gal-tabs-zonas').innerHTML = GAL_TABS.filter(x => x.k === 'gen').concat(GAL_TABS.filter(x => /^z\d$/.test(x.k))).map(pill).join('');
+  if (!galInit) { galInit = true; msSetOpts('gal-f-zsel', 'Todas las zonas', [], () => {}); MS['gal-f-zsel'].sel = ['z1']; }
+  msSetOpts('gal-f-zsel', 'Todas las zonas', ZONA_KEYS.map(k => { const x = GAL_TABS.find(t => t.k === k); return [k, k === 'gen' ? 'Zona 0 · Delegados generales' : x.t, galBase(x).length]; }), () => { galTab = 'zsel'; renderGaleria(); });
+  const fzs = document.getElementById('gal-f-zsel'); if (fzs) fzs.classList.toggle('cred-act', galTab === 'zsel');
   msSetOpts('gal-f-cred', 'Todas las credenciales', CRED_TIPOS.map(k => { const x = GAL_TABS.find(t => t.k === k); return [k, x.corto, galeria.filter(g => g.grupo === k).length]; }), () => { galTab = 'cred'; renderGaleria(); });
   const fc = document.getElementById('gal-f-cred'); if (fc) fc.classList.toggle('cred-act', galTab === 'cred');
   let optsT;
@@ -4534,7 +4545,7 @@ function renderGaleria() {
       ['1', '2', '3', '4', '5', '6', '7'].concat(cz.sin ? ['sin'] : []).map(z => '<span class="gal-pill" style="cursor:default;">' + (z === 'sin' ? 'Sin zona' : 'Zona ' + z) + '<span class="cnt">' + (cz[z] || 0) + '</span></span>').join('') +
       '<span class="gal-pill act" style="background:' + (tab.color || '#5aa9e6') + ';border-color:' + (tab.color || '#5aa9e6') + ';cursor:default;">Total ' + escapeHtml(tab.corto || tab.t) + '<span class="cnt">' + todos.length + '</span></span></div>'; }
   } else if (rs) rs.style.display = 'none';
-  document.getElementById('gal-titulo').textContent = tab.multi ? (msGet('gal-f-cred').length ? msGet('gal-f-cred').map(k => GAL_TABS.find(t => t.k === k).corto).join(' + ') : 'Todas las credenciales') : tab.t;
+  document.getElementById('gal-titulo').textContent = tab.zmulti ? (msGet('gal-f-zsel').length ? msGet('gal-f-zsel').map(k => k === 'gen' ? 'Zona 0' : GAL_TABS.find(t => t.k === k).t).join(' + ') : 'Todas las zonas') : tab.multi ? (msGet('gal-f-cred').length ? msGet('gal-f-cred').map(k => GAL_TABS.find(t => t.k === k).corto).join(' + ') : 'Todas las credenciales') : tab.t;
   document.getElementById('gal-toolbar').style.display = tab.manual ? 'flex' : 'none';
 
   let items;
@@ -4546,7 +4557,7 @@ function renderGaleria() {
       '<div class="muted" style="font-size:11px;text-align:center;">' + (tab.multi ? escapeHtml((GAL_TABS.find(t => t.k === g.grupo) || {}).corto || '') + ' · ' : '') + (galZonaDe(g) === 'sin' ? 'Sin zona' : 'Zona ' + escapeHtml(galZonaDe(g))) + (g.distrito ? ' · ' + escapeHtml(g.distrito) : '') + '</div></div>'; });
   } else {
     const ps = galPersonas(tab).filter(a => coincideBusq(fullName(a))).sort((a, b) => fullName(a).localeCompare(fullName(b)));
-    items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div></div>');
+    items = ps.map(a => '<div class="gal-card">' + avatarHtml(a, 104, true) + '<div class="gal-nombre">' + escapeHtml(fullName(a)) + '</div>' + (tab.zmulti && msGet('gal-f-zsel').length !== 1 ? '<div class="gal-dist">' + (String(a.zona ?? '') === '0' ? 'Zona 0' : a.zona ? 'Zona ' + escapeHtml(String(a.zona)) : 'Sin zona') + '</div>' : '') + '</div>');
   }
   document.getElementById('gal-total').textContent = items.length;
   const q = galQuery();
